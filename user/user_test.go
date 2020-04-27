@@ -14,7 +14,7 @@ func TestUserRegisterDeviceToken(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestUserRegisterDeviceTokenFailed(t *testing.T) {
+func TestUserRegisterDeviceTokenUnauthorized(t *testing.T) {
 	cli, err := NewClient()
 	cli.oauthToken.AccessToken = "invalid-token"
 

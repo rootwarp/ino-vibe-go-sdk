@@ -23,6 +23,16 @@ func TestGetDeviceServiceVersion(t *testing.T) {
 }
 */
 
+func TestGetDeviceListUnauthorized(t *testing.T) {
+	ctx := context.Background()
+	cli, _ := NewClient()
+	cli.oauthToken.AccessToken = "invalid-token"
+
+	_, err := cli.List(ctx, pb.InstallStatus_Installed)
+
+	assert.NotNil(t, err)
+}
+
 func TestGetDeviceListInstallStatus(t *testing.T) {
 	ctx := context.Background()
 	cli, _ := NewClient()

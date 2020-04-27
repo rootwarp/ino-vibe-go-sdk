@@ -3,12 +3,16 @@ package device
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"log"
 
+	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/oauth"
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
+	iv_auth "github.com/rootwarp/ino-vibe-go-sdk/auth"
 )
 
 // Reader provides retrieve operations for Device.
@@ -30,11 +34,16 @@ const (
 
 // Client is client for device instance.
 type Client struct {
+	oauthToken   *oauth2.Token
 	deviceClient pb.DeviceServiceClient
 }
 
 func (c *Client) getDeviceClient() pb.DeviceServiceClient {
 	if c.deviceClient == nil {
+		if c.oauthToken == nil {
+			log.Panicln(errors.New("No credentials"))
+		}
+
 		certPool, err := x509.SystemCertPool()
 		if err != nil {
 			log.Panicln(err)
@@ -44,6 +53,7 @@ func (c *Client) getDeviceClient() pb.DeviceServiceClient {
 		conn, _ := grpc.Dial(
 			serverURL,
 			grpc.WithTransportCredentials(creds),
+			grpc.WithPerRPCCredentials(oauth.NewOauthAccess(c.oauthToken)),
 		)
 		c.deviceClient = pb.NewDeviceServiceClient(conn)
 	}
@@ -94,5 +104,10 @@ func (c *Client) UpdateConfig(ctx context.Context, req *pb.DeviceConfigUpdateReq
 
 // NewClient create client.
 func NewClient() (*Client, error) {
-	return &Client{}, nil
+	token, err := iv_auth.LoadCredentials()
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	return &Client{oauthToken: token}, nil
 }
