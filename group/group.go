@@ -15,24 +15,6 @@ import (
 	iv_auth "github.com/rootwarp/ino-vibe-go-sdk/auth"
 )
 
-// Reader provides retrieve operations for Group.
-type Reader interface {
-	GetName(ctx context.Context, groupID string) (string, error)
-	GetID(ctx context.Context, groupName string) (string, error)
-	GetIDs(ctx context.Context, groupName []string) (string, error)
-	GetChildGroups(ctx context.Context, groupID string) ([]Group, error)
-	GetParentUsers(ctx context.Context, groupID string) ([]string, error)
-}
-
-// Group is data structure for describing Auth0 Group.
-type Group struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// Writer provides update operations for Group.
-type Writer interface{}
-
 const (
 	serverURL = "group.ino-vibe.ino-on.dev:443"
 )
@@ -42,13 +24,27 @@ var (
 	ErrGroupNonExist = errors.New("Group does not exist")
 )
 
+// Group is data structure for describing Auth0 Group.
+type Group struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // Client is client for Group.
-type Client struct {
+type Client interface {
+	GetName(ctx context.Context, groupID string) (string, error)
+	GetID(ctx context.Context, groupName string) (string, error)
+	GetIDs(ctx context.Context, groupName []string) ([]string, error)
+	GetChildGroups(ctx context.Context, groupID string) ([]Group, error)
+	GetParentUsers(ctx context.Context, groupID string) ([]string, error)
+}
+
+type client struct {
 	oauthToken  *oauth2.Token
 	groupClient pb.GroupServiceClient
 }
 
-func (c *Client) getGroupClient() pb.GroupServiceClient {
+func (c *client) getGroupClient() pb.GroupServiceClient {
 	if c.groupClient == nil {
 		if c.oauthToken == nil {
 			log.Panicln(errors.New("No credentials"))
@@ -72,7 +68,7 @@ func (c *Client) getGroupClient() pb.GroupServiceClient {
 }
 
 // GetName returns group's name.
-func (c *Client) GetName(ctx context.Context, groupID string) (string, error) {
+func (c *client) GetName(ctx context.Context, groupID string) (string, error) {
 	cli := c.getGroupClient()
 
 	resp, err := cli.Detail(ctx, &pb.GroupRequest{Groupid: groupID})
@@ -89,7 +85,7 @@ func (c *Client) GetName(ctx context.Context, groupID string) (string, error) {
 }
 
 // GetID returns group's name.
-func (c *Client) GetID(ctx context.Context, groupName string) (string, error) {
+func (c *client) GetID(ctx context.Context, groupName string) (string, error) {
 	cli := c.getGroupClient()
 
 	resp, err := cli.FindByID(ctx, &pb.GroupFindRequest{Names: []string{groupName}})
@@ -106,7 +102,7 @@ func (c *Client) GetID(ctx context.Context, groupName string) (string, error) {
 }
 
 // GetIDs returns slice of group name.
-func (c *Client) GetIDs(ctx context.Context, groupNames []string) ([]string, error) {
+func (c *client) GetIDs(ctx context.Context, groupNames []string) ([]string, error) {
 	cli := c.getGroupClient()
 
 	resp, err := cli.FindByID(ctx, &pb.GroupFindRequest{Names: groupNames})
@@ -128,7 +124,7 @@ func (c *Client) GetIDs(ctx context.Context, groupNames []string) ([]string, err
 }
 
 // GetChildGroups returns tree based child groups.
-func (c *Client) GetChildGroups(ctx context.Context, groupID string) ([]Group, error) {
+func (c *client) GetChildGroups(ctx context.Context, groupID string) ([]Group, error) {
 	cli := c.getGroupClient()
 
 	resp, err := cli.Childs(ctx, &pb.GroupRequest{Groupid: groupID})
@@ -150,7 +146,7 @@ func (c *Client) GetChildGroups(ctx context.Context, groupID string) ([]Group, e
 
 // GetParentUsers return list of all users in parent groups.
 // Return value of []string contains email addresses of users.
-func (c *Client) GetParentUsers(ctx context.Context, groupID string) ([]string, error) {
+func (c *client) GetParentUsers(ctx context.Context, groupID string) ([]string, error) {
 	cli := c.getGroupClient()
 
 	resp, err := cli.NestedUsers(ctx, &pb.GroupRequest{Groupid: groupID})
@@ -171,11 +167,11 @@ func (c *Client) GetParentUsers(ctx context.Context, groupID string) ([]string, 
 }
 
 // NewClient creates new group client.
-func NewClient() (*Client, error) {
+func NewClient() (Client, error) {
 	token, err := iv_auth.LoadCredentials()
 	if err != nil {
 		log.Panicln(err)
 	}
 
-	return &Client{oauthToken: token}, nil
+	return &client{oauthToken: token}, nil
 }

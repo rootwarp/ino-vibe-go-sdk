@@ -13,20 +13,10 @@ import (
 	pb "bitbucket.org/ino-on/ino-vibe-api"
 )
 
-/*
-func TestGetDeviceServiceVersion(t *testing.T) {
-	version, err := GetDeviceServiceVersion()
-
-	assert.Nil(t, err)
-	fmt.Println(version)
-	assert.NotEqual(t, version, "")
-}
-*/
-
 func TestGetDeviceListUnauthorized(t *testing.T) {
 	ctx := context.Background()
 	cli, _ := NewClient()
-	cli.oauthToken.AccessToken = "invalid-token"
+	(cli.(*client)).oauthToken.AccessToken = "invalid-token"
 
 	_, err := cli.List(ctx, pb.InstallStatus_Installed)
 
