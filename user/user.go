@@ -15,13 +15,12 @@ import (
 	iv_auth "github.com/rootwarp/ino-vibe-go-sdk/auth"
 )
 
-// Writer provides insterfaces for modify user's information.
-type Writer interface {
+// Client is client for write user's information.
+type Client interface {
 	RegisterDeviceToken(userID, username, deviceToken string) error
 }
 
-// Client is client for write user's information.
-type Client struct {
+type client struct {
 	oauthToken *oauth2.Token
 }
 
@@ -30,7 +29,7 @@ const (
 )
 
 // RegisterDeviceToken register device token to receive mobile push notification.
-func (c *Client) RegisterDeviceToken(userID, username, deviceToken string) error {
+func (c *client) RegisterDeviceToken(userID, username, deviceToken string) error {
 	if c.oauthToken == nil {
 		log.Panicln(errors.New("No credentials"))
 	}
@@ -67,11 +66,11 @@ func (c *Client) RegisterDeviceToken(userID, username, deviceToken string) error
 }
 
 // NewClient creates client.
-func NewClient() (*Client, error) {
+func NewClient() (Client, error) {
 	token, err := iv_auth.LoadCredentials()
 	if err != nil {
 		log.Panicln(err)
 	}
 
-	return &Client{oauthToken: token}, nil
+	return &client{oauthToken: token}, nil
 }

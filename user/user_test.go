@@ -16,7 +16,7 @@ func TestUserRegisterDeviceToken(t *testing.T) {
 
 func TestUserRegisterDeviceTokenUnauthorized(t *testing.T) {
 	cli, err := NewClient()
-	cli.oauthToken.AccessToken = "invalid-token"
+	(cli.(*client)).oauthToken.AccessToken = "invalid-token"
 
 	err = cli.RegisterDeviceToken("dummy", "dummy@ino-on.com", "hello world")
 

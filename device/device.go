@@ -15,30 +15,26 @@ import (
 	iv_auth "github.com/rootwarp/ino-vibe-go-sdk/auth"
 )
 
-// Reader provides retrieve operations for Device.
-type Reader interface {
-	List(context.Context, pb.InstallStatus) (*pb.DeviceListResponse, error)
-	Detail(context.Context, string) (*pb.DeviceResponse, error)
-}
-
-// Writer provides update operations for Device.
-type Writer interface {
-	UpdateInfo(context.Context, *pb.DeviceInfoUpdateRequest) (*pb.DeviceResponse, error)
-	UpdateStatus(context.Context, *pb.DeviceStatusUpdateRequest) (*pb.DeviceResponse, error)
-	UpdateConfig(context.Context, *pb.DeviceConfigUpdateRequest) (*pb.DeviceResponse, error)
-}
-
 const (
 	serverURL = "device.ino-vibe.ino-on.dev:443"
 )
 
 // Client is client for device instance.
-type Client struct {
+type Client interface {
+	List(context.Context, pb.InstallStatus) (*pb.DeviceListResponse, error)
+	Detail(context.Context, string) (*pb.DeviceResponse, error)
+
+	UpdateInfo(context.Context, *pb.DeviceInfoUpdateRequest) (*pb.DeviceResponse, error)
+	UpdateStatus(context.Context, *pb.DeviceStatusUpdateRequest) (*pb.DeviceResponse, error)
+	UpdateConfig(context.Context, *pb.DeviceConfigUpdateRequest) (*pb.DeviceResponse, error)
+}
+
+type client struct {
 	oauthToken   *oauth2.Token
 	deviceClient pb.DeviceServiceClient
 }
 
-func (c *Client) getDeviceClient() pb.DeviceServiceClient {
+func (c *client) getDeviceClient() pb.DeviceServiceClient {
 	if c.deviceClient == nil {
 		if c.oauthToken == nil {
 			log.Panicln(errors.New("No credentials"))
@@ -62,7 +58,7 @@ func (c *Client) getDeviceClient() pb.DeviceServiceClient {
 }
 
 // List returns slice of devices.
-func (c *Client) List(ctx context.Context, installStatus pb.InstallStatus) (*pb.DeviceListResponse, error) {
+func (c *client) List(ctx context.Context, installStatus pb.InstallStatus) (*pb.DeviceListResponse, error) {
 	cli := c.getDeviceClient()
 
 	req := pb.DeviceListRequest{
@@ -74,7 +70,7 @@ func (c *Client) List(ctx context.Context, installStatus pb.InstallStatus) (*pb.
 }
 
 // Detail returns detail information of selected device.
-func (c *Client) Detail(ctx context.Context, devid string) (*pb.DeviceResponse, error) {
+func (c *client) Detail(ctx context.Context, devid string) (*pb.DeviceResponse, error) {
 	cli := c.getDeviceClient()
 
 	req := pb.DeviceRequest{
@@ -85,29 +81,29 @@ func (c *Client) Detail(ctx context.Context, devid string) (*pb.DeviceResponse, 
 }
 
 // UpdateInfo update basic information of device.
-func (c *Client) UpdateInfo(ctx context.Context, req *pb.DeviceInfoUpdateRequest) (*pb.DeviceResponse, error) {
+func (c *client) UpdateInfo(ctx context.Context, req *pb.DeviceInfoUpdateRequest) (*pb.DeviceResponse, error) {
 	cli := c.getDeviceClient()
 	return cli.UpdateInfo(context.Background(), req)
 }
 
 // UpdateStatus updates status information of device.
-func (c *Client) UpdateStatus(ctx context.Context, req *pb.DeviceStatusUpdateRequest) (*pb.DeviceResponse, error) {
+func (c *client) UpdateStatus(ctx context.Context, req *pb.DeviceStatusUpdateRequest) (*pb.DeviceResponse, error) {
 	cli := c.getDeviceClient()
 	return cli.UpdateStatus(context.Background(), req)
 }
 
 // UpdateConfig updates device configs.
-func (c *Client) UpdateConfig(ctx context.Context, req *pb.DeviceConfigUpdateRequest) (*pb.DeviceResponse, error) {
+func (c *client) UpdateConfig(ctx context.Context, req *pb.DeviceConfigUpdateRequest) (*pb.DeviceResponse, error) {
 	cli := c.getDeviceClient()
 	return cli.UpdateConfig(context.Background(), req)
 }
 
 // NewClient create client.
-func NewClient() (*Client, error) {
+func NewClient() (Client, error) {
 	token, err := iv_auth.LoadCredentials()
 	if err != nil {
 		log.Panicln(err)
 	}
 
-	return &Client{oauthToken: token}, nil
+	return &client{oauthToken: token}, nil
 }
