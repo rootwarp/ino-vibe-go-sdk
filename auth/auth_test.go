@@ -51,4 +51,12 @@ func TestAuthLoadSuccess(t *testing.T) {
 	assert.Equal(t, "bearer", oauthToken.TokenType)
 }
 
+func TestAuthDefaultFilePath(t *testing.T) {
+	credFilePath = ""
+	_, _ = LoadCredentials()
+
+	home := os.Getenv("HOME")
+	assert.Equal(t, home+"/.inovibe/credentials.json", credFilePath)
+}
+
 // TODO: Issue credentials.

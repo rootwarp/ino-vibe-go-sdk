@@ -32,6 +32,11 @@ func IssueCredentials(id, secret, audience string) (*oauth2.Token, error) {
 func LoadCredentials() (*oauth2.Token, error) {
 	storedCred := storedCredential{}
 
+	if credFilePath == "" {
+		home := os.Getenv("HOME")
+		credFilePath = home + "/.inovibe/credentials.json"
+	}
+
 	credData, err := ioutil.ReadFile(credFilePath)
 	if err != nil {
 		log.Println("LoadCredentials", err)
