@@ -27,6 +27,8 @@ type Client interface {
 	UpdateInfo(context.Context, *pb.DeviceInfoUpdateRequest) (*pb.DeviceResponse, error)
 	UpdateStatus(context.Context, *pb.DeviceStatusUpdateRequest) (*pb.DeviceResponse, error)
 	UpdateConfig(context.Context, *pb.DeviceConfigUpdateRequest) (*pb.DeviceResponse, error)
+
+	StatusLog(context.Context, *pb.StatusLogRequest) (*pb.StatusLogResponse, error)
 }
 
 type client struct {
@@ -96,6 +98,11 @@ func (c *client) UpdateStatus(ctx context.Context, req *pb.DeviceStatusUpdateReq
 func (c *client) UpdateConfig(ctx context.Context, req *pb.DeviceConfigUpdateRequest) (*pb.DeviceResponse, error) {
 	cli := c.getDeviceClient()
 	return cli.UpdateConfig(context.Background(), req)
+}
+
+func (c *client) StatusLog(ctx context.Context, req *pb.StatusLogRequest) (*pb.StatusLogResponse, error) {
+	cli := c.getDeviceClient()
+	return cli.StatusLog(ctx, req)
 }
 
 // NewClient create client.

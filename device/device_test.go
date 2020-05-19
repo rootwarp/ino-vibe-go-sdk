@@ -200,3 +200,67 @@ func TestUpdateDeviceConfig(t *testing.T) {
 		assert.Equal(t, req.GetRecogParam_2Value(), resp.Devices[0].RecogParam_2)
 	}
 }
+
+func TestStatusLogDefaultParam(t *testing.T) {
+	testDevid := "000000030000000000000001"
+	defaultPageSize := 100
+
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	req := &pb.StatusLogRequest{
+		Devid: testDevid,
+	}
+
+	current := time.Now()
+	resp, err := cli.StatusLog(ctx, req)
+
+	fmt.Println(resp.Logs, len(resp.Logs))
+
+	assert.Nil(t, err)
+	assert.Equal(t, testDevid, resp.Devid)
+	assert.Equal(t, uint32(0), resp.PageNo)
+	assert.Equal(t, uint32(defaultPageSize), resp.PageSize)
+	assert.InDelta(t, resp.TimeStart.Seconds, current.Unix()-(3600*24*7), 5)
+	assert.InDelta(t, resp.TimeEnd.Seconds, current.Unix(), 5)
+
+	assert.True(t, len(resp.Logs) <= defaultPageSize)
+	if len(resp.Logs) == defaultPageSize {
+		assert.True(t, resp.HasNext)
+	} else {
+		assert.False(t, resp.HasNext)
+	}
+}
+
+func TestStatusLogValidParam(t *testing.T) {
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	current := time.Now()
+
+	timeStart := current.Add(-(time.Hour * 24 * 10))
+	timeEnd := current.Add(-(time.Hour * 24 * 5))
+
+	req := &pb.StatusLogRequest{
+		Devid:     testDevid,
+		PageNo:    1,
+		PageSize:  5,
+		TimeStart: &timestamp.Timestamp{Seconds: timeStart.Unix()},
+		TimeEnd:   &timestamp.Timestamp{Seconds: timeEnd.Unix()},
+	}
+
+	resp, err := cli.StatusLog(ctx, req)
+
+	assert.Nil(t, err)
+	assert.Equal(t, testDevid, resp.Devid)
+	assert.Equal(t, req.PageNo, resp.PageNo)
+	assert.Equal(t, req.PageSize, resp.PageSize)
+	assert.Equal(t, resp.TimeStart.Seconds, timeStart.Unix())
+	assert.Equal(t, resp.TimeEnd.Seconds, timeEnd.Unix())
+
+	for _, log := range resp.Logs {
+		assert.True(t, log.Time.Seconds >= timeStart.Unix())
+		assert.True(t, log.Time.Seconds <= timeEnd.Unix())
+	}
+}
