@@ -215,8 +215,6 @@ func TestStatusLogDefaultParam(t *testing.T) {
 	current := time.Now()
 	resp, err := cli.StatusLog(ctx, req)
 
-	fmt.Println(resp.Logs, len(resp.Logs))
-
 	assert.Nil(t, err)
 	assert.Equal(t, testDevid, resp.Devid)
 	assert.Equal(t, uint32(0), resp.PageNo)
