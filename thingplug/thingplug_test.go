@@ -7,15 +7,34 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestThingplugPowrOff(t *testing.T) {
-	serverURL = "thingplug.ino-vibe.ino-on.dev:443"
+var (
+	testDevID = "00000125d02544fffefe143a"
+	cli       Client
+)
 
-	cli, err := NewClient()
+func init() {
+	serverURL = "feature-thingplug.ino-vibe.ino-on.dev:443"
+
+	cli, _ = NewClient()
+}
+
+func TestThingplugPowrOff(t *testing.T) {
+	ctx := context.Background()
+	err := cli.PowerOff(ctx, testDevID)
 
 	assert.Nil(t, err)
+}
 
+func TestThingplugReset(t *testing.T) {
 	ctx := context.Background()
-	err = cli.PowerOff(ctx, "00000125d02544fffefe143a")
+	err := cli.Reset(ctx, testDevID)
+
+	assert.Nil(t, err)
+}
+
+func TestThingplugBaseReset(t *testing.T) {
+	ctx := context.Background()
+	err := cli.BaseReset(ctx, testDevID)
 
 	assert.Nil(t, err)
 }

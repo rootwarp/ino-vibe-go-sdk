@@ -21,6 +21,8 @@ var (
 // Client provides control interfaces for Ino-Vibe.
 type Client interface {
 	PowerOff(ctx context.Context, devid string) error
+	BaseReset(ctx context.Context, devid string) error
+	Reset(ctx context.Context, devid string) error
 	Close()
 }
 
@@ -31,11 +33,21 @@ type client struct {
 }
 
 func (c *client) PowerOff(ctx context.Context, devid string) error {
-	req := &pb.ThingplugDeviceRequest{
-		Devid: devid,
-	}
+	resp, err := c.thingplugClient.PowerOff(ctx, &pb.ThingplugDeviceRequest{Devid: devid})
+	fmt.Println(resp)
 
-	resp, err := c.thingplugClient.PowerOff(ctx, req)
+	return err
+}
+
+func (c *client) BaseReset(ctx context.Context, devid string) error {
+	resp, err := c.thingplugClient.BaseReset(ctx, &pb.ThingplugDeviceRequest{Devid: devid})
+	fmt.Println(resp)
+
+	return err
+}
+
+func (c *client) Reset(ctx context.Context, devid string) error {
+	resp, err := c.thingplugClient.Reset(ctx, &pb.ThingplugDeviceRequest{Devid: devid})
 	fmt.Println(resp)
 
 	return err
