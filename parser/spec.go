@@ -231,9 +231,7 @@ var frameSpec = `
                 "name": "payload",
                 "subtype": {
                     "1": "power_up",
-                    "2": "power_off",
                     "4": "setup",
-                    "5": "test_result",
                     "6": "reject_count",
                     "7": "notice_config"
                 }
