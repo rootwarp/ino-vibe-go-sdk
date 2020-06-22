@@ -18,13 +18,20 @@ import (
 // Client is client for write user's information.
 type Client interface {
 	RegisterDeviceToken(userID, username, deviceToken string) error
+	GetDeviceToken(username string) ([]DeviceToken, error)
+}
+
+// DeviceToken describes token for FCM.
+type DeviceToken struct {
+	DeviceName string
+	Token      string
 }
 
 type client struct {
 	oauthToken *oauth2.Token
 }
 
-const (
+var (
 	serverURL = "user.ino-vibe.ino-on.dev:443"
 )
 
@@ -34,7 +41,28 @@ func (c *client) RegisterDeviceToken(userID, username, deviceToken string) error
 		log.Panicln(errors.New("No credentials"))
 	}
 
-	// TODO: Refactoring. Will be duplicated.
+	conn, err := c.connection()
+	if err != nil {
+		return err
+	}
+
+	cli := pb.NewUserServiceClient(conn)
+
+	ctx := context.Background()
+	req := pb.RegisterDeviceTokenRequest{
+		UserId:      userID,
+		Username:    username,
+		DeviceToken: deviceToken,
+	}
+
+	resp, err := cli.RegisterDeviceToken(ctx, &req)
+
+	log.Println("Resp ", resp, err)
+
+	return err
+}
+
+func (c *client) connection() (*grpc.ClientConn, error) {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Panicln(err)
@@ -46,23 +74,42 @@ func (c *client) RegisterDeviceToken(userID, username, deviceToken string) error
 		grpc.WithTransportCredentials(creds),
 		grpc.WithPerRPCCredentials(oauth.NewOauthAccess(c.oauthToken)),
 	)
-	if err != nil {
-		return err
+
+	return conn, err
+}
+
+func (c *client) GetDeviceToken(username string) ([]DeviceToken, error) {
+	if c.oauthToken == nil {
+		log.Panicln(errors.New("No credentials"))
 	}
 
-	ctx := context.Background()
-	req := pb.RegisterDeviceTokenRequest{
-		UserId:      userID,
-		Username:    username,
-		DeviceToken: deviceToken,
+	conn, err := c.connection()
+	if err != nil {
+		return nil, err
 	}
 
 	cli := pb.NewUserServiceClient(conn)
-	resp, err := cli.RegisterDeviceToken(ctx, &req)
 
-	log.Println("Resp ", resp, err)
+	ctx := context.Background()
+	req := &pb.GetDeviceTokenRequest{Username: username}
+	resp, err := cli.GetDeviceToken(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 
-	return err
+	if resp.ResponseCode != pb.ResponseCode_SUCCESS {
+		return make([]DeviceToken, 0), nil
+	}
+
+	deviceTokens := make([]DeviceToken, len(resp.GetDeviceTokens()))
+	for i, token := range resp.GetDeviceTokens() {
+		deviceTokens[i] = DeviceToken{
+			DeviceName: token.GetDeviceName(),
+			Token:      token.GetToken(),
+		}
+	}
+
+	return deviceTokens, nil
 }
 
 // NewClient creates client.

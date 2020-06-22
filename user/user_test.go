@@ -22,3 +22,21 @@ func TestUserRegisterDeviceTokenUnauthorized(t *testing.T) {
 
 	assert.NotNil(t, err)
 }
+
+func TestUserGetDeviceToken(t *testing.T) {
+	cli, err := NewClient()
+
+	tokens, err := cli.GetDeviceToken("jkkim@ino-on.com")
+
+	assert.Nil(t, err)
+	assert.True(t, len(tokens) > 0)
+}
+
+func TestUserGetDeviceTokenNonExistUser(t *testing.T) {
+	cli, err := NewClient()
+
+	tokens, err := cli.GetDeviceToken("non-exist@ino-on.com")
+
+	assert.Nil(t, err)
+	assert.True(t, len(tokens) == 0)
+}
