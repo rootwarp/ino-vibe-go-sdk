@@ -15,7 +15,7 @@ import (
 	iv_auth "github.com/rootwarp/ino-vibe-go-sdk/auth"
 )
 
-const (
+var (
 	serverURL = "device.ino-vibe.ino-on.dev:443"
 )
 

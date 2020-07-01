@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -12,6 +13,15 @@ import (
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
 )
+
+func init() {
+	target := os.Getenv("TEST_TARGET")
+	if target != "" {
+		serverURL = fmt.Sprintf("%s-%s", target, serverURL)
+	}
+
+	fmt.Println("Test ", serverURL)
+}
 
 func TestGetDeviceListUnauthorized(t *testing.T) {
 	ctx := context.Background()
