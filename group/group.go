@@ -149,7 +149,7 @@ func (c *client) GetChildGroups(ctx context.Context, groupID string) ([]Group, e
 func (c *client) GetParentUsers(ctx context.Context, groupID string) ([]string, error) {
 	cli := c.getGroupClient()
 
-	resp, err := cli.NestedUsers(ctx, &pb.GroupRequest{Groupid: groupID})
+	resp, err := cli.ParentUsers(ctx, &pb.GroupRequest{Groupid: groupID})
 	if err != nil {
 		return []string{}, err
 	}

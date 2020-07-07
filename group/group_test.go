@@ -144,3 +144,22 @@ func TestGroupGetChildUsersOK(t *testing.T) {
 		assert.Equal(t, expect.ExpectErr, err)
 	}
 }
+
+func TestGroupParentUsers(t *testing.T) {
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	groupID, err := cli.GetID(ctx, "이노온-개발-서버")
+	fmt.Println(groupID, err)
+
+	emails, err := cli.GetParentUsers(ctx, groupID)
+
+	assert.Contains(t, emails, "child_tester@ino-on.com")
+	assert.Contains(t, emails, "parent_tester@ino-on.com")
+
+	groupID, err = cli.GetID(ctx, "이노온")
+	emails, err = cli.GetParentUsers(ctx, groupID)
+
+	assert.Contains(t, emails, "parent_tester@ino-on.com")
+	assert.NotContains(t, emails, "child_tester@ino-on.com")
+}
