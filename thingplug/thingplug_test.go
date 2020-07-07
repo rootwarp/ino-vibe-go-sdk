@@ -2,6 +2,8 @@ package thingplug
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,8 +15,12 @@ var (
 )
 
 func init() {
-	serverURL = "feature-thingplug.ino-vibe.ino-on.dev:443"
+	target := os.Getenv("TEST_TARGET")
+	if target != "" {
+		serverURL = fmt.Sprintf("%s-%s", target, serverURL)
+	}
 
+	fmt.Println("Test ", serverURL)
 	cli, _ = NewClient()
 }
 

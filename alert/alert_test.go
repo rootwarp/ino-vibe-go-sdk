@@ -2,6 +2,8 @@ package alert
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -13,6 +15,15 @@ import (
 var (
 	testDevID = "00000125d02544fffefe108a"
 )
+
+func init() {
+	target := os.Getenv("TEST_TARGET")
+	if target != "" {
+		serverURL = fmt.Sprintf("%s-%s", target, serverURL)
+	}
+
+	fmt.Println("Test ", serverURL)
+}
 
 func TestListAlertByDeviceID(t *testing.T) {
 	cli, _ := NewClient()

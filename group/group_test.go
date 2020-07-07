@@ -2,6 +2,8 @@ package group
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
@@ -10,10 +12,19 @@ import (
 
 var (
 	fixtureGroups = []pb.Group{
-		pb.Group{Groupid: "607f9db4-7eee-4a08-894d-356c8a462ae1", Name: "이노온-개발"},
-		pb.Group{Groupid: "b09a8694-6ccb-4cb7-9ffa-57681869f54d", Name: "이노온-운영"},
+		{Groupid: "607f9db4-7eee-4a08-894d-356c8a462ae1", Name: "이노온-개발"},
+		{Groupid: "b09a8694-6ccb-4cb7-9ffa-57681869f54d", Name: "이노온-운영"},
 	}
 )
+
+func init() {
+	target := os.Getenv("TEST_TARGET")
+	if target != "" {
+		serverURL = fmt.Sprintf("%s-%s", target, serverURL)
+	}
+
+	fmt.Println("Test ", serverURL)
+}
 
 func TestGroupGetName(t *testing.T) {
 	expectations := []struct {
@@ -132,4 +143,23 @@ func TestGroupGetChildUsersOK(t *testing.T) {
 
 		assert.Equal(t, expect.ExpectErr, err)
 	}
+}
+
+func TestGroupParentUsers(t *testing.T) {
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	groupID, err := cli.GetID(ctx, "이노온-개발-서버")
+	fmt.Println(groupID, err)
+
+	emails, err := cli.GetParentUsers(ctx, groupID)
+
+	assert.Contains(t, emails, "child_tester@ino-on.com")
+	assert.Contains(t, emails, "parent_tester@ino-on.com")
+
+	groupID, err = cli.GetID(ctx, "이노온")
+	emails, err = cli.GetParentUsers(ctx, groupID)
+
+	assert.Contains(t, emails, "parent_tester@ino-on.com")
+	assert.NotContains(t, emails, "child_tester@ino-on.com")
 }
