@@ -3,7 +3,7 @@ module github.com/rootwarp/ino-vibe-go-sdk
 go 1.14
 
 require (
-	bitbucket.org/ino-on/ino-vibe-api v0.0.0-20200713080105-72d36d78923a
+	bitbucket.org/ino-on/ino-vibe-api v0.0.0-20200715081825-89348a8b9226
 	cloud.google.com/go v0.58.0 // indirect
 	github.com/bojand/ghz v0.52.0
 	github.com/golang/protobuf v1.4.2

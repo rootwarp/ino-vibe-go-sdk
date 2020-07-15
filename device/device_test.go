@@ -273,7 +273,7 @@ func TestStatusLogValidParam(t *testing.T) {
 	}
 }
 
-func TestPrepareInstall(t *testing.T) {
+func TestInstall(t *testing.T) {
 	testDevid := "000000030000000000000001"
 	ctx := context.Background()
 	cli, _ := NewClient()
@@ -299,7 +299,7 @@ func TestPrepareInstall(t *testing.T) {
 		GroupId:   "",
 	}
 
-	// Test
+	// First Test PrepareInstall
 	current := time.Now()
 
 	resp, err := cli.PrepareInstall(ctx, req)
@@ -310,14 +310,36 @@ func TestPrepareInstall(t *testing.T) {
 	assert.Equal(t, testDevid, resp.Devid)
 	assert.NotEqual(t, "", resp.InstallSessionKey)
 
-	devResp, err := cli.Detail(ctx, testDevid)
+	devResp, _ := cli.Detail(ctx, testDevid)
 	device := devResp.Devices[0]
 
 	assert.Equal(t, testDevid, device.Devid)
 	assert.Equal(t, pb.InstallStatus_Requested, device.InstallStatus)
-	assert.Equal(t, "test-alias", device.Alias)
+	assert.Equal(t, req.Alias, device.Alias)
 	assert.Equal(t, req.Latitude, device.Latitude)
 	assert.Equal(t, req.Longitude, device.Longitude)
-	assert.Equal(t, "contact@ino-on.com", device.Installer)
+	assert.Equal(t, req.Installer, device.Installer)
 	assert.InDelta(t, current.Unix(), device.InstallDate.AsTime().Unix(), 3)
+
+	// Second Test CompleteInstall
+	completeResp, err := cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{
+		Devid:             testDevid,
+		InstallSessionKey: resp.InstallSessionKey,
+	})
+
+	// Asserts.
+	assert.Equal(t, pb.ResponseCode_SUCCESS, completeResp.ResponseCode)
+
+	devResp, _ = cli.Detail(ctx, testDevid)
+	device = devResp.Devices[0]
+
+	assert.Equal(t, testDevid, device.Devid)
+	assert.Equal(t, pb.InstallStatus_Installed, device.InstallStatus)
+	assert.Equal(t, resp.InstallSessionKey, device.InstallSessionKey)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
 }

@@ -31,6 +31,7 @@ type Client interface {
 	StatusLog(context.Context, *pb.StatusLogRequest) (*pb.StatusLogResponse, error)
 
 	PrepareInstall(context.Context, *pb.PrepareInstallRequest) (*pb.PrepareInstallResponse, error)
+	CompleteInstall(context.Context, *pb.CompleteInstallRequest) (*pb.CompleteInstallResponse, error)
 }
 
 type client struct {
@@ -110,6 +111,11 @@ func (c *client) StatusLog(ctx context.Context, req *pb.StatusLogRequest) (*pb.S
 func (c *client) PrepareInstall(ctx context.Context, in *pb.PrepareInstallRequest) (*pb.PrepareInstallResponse, error) {
 	cli := c.getDeviceClient()
 	return cli.PrepareInstall(ctx, in)
+}
+
+func (c *client) CompleteInstall(ctx context.Context, in *pb.CompleteInstallRequest) (*pb.CompleteInstallResponse, error) {
+	cli := c.getDeviceClient()
+	return cli.CompleteInstall(ctx, in)
 }
 
 // NewClient create client.
