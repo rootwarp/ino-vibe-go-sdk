@@ -272,3 +272,52 @@ func TestStatusLogValidParam(t *testing.T) {
 		assert.True(t, log.Time.Seconds <= timeEnd.Unix())
 	}
 }
+
+func TestPrepareInstall(t *testing.T) {
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	_, _ = cli.UpdateInfo(ctx, &pb.DeviceInfoUpdateRequest{
+		Devid:     testDevid,
+		Alias:     &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: ""},
+		Latitude:  &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: 0},
+		Longitude: &pb.DeviceInfoUpdateRequest_LongitudeValue{LongitudeValue: 0},
+		Installer: &pb.DeviceInfoUpdateRequest_InstallerValue{InstallerValue: ""},
+	})
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+
+	req := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	// Test
+	current := time.Now()
+
+	resp, err := cli.PrepareInstall(ctx, req)
+
+	// Assert
+	assert.Nil(t, err)
+	assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResponseCode)
+	assert.Equal(t, testDevid, resp.Devid)
+	assert.NotEqual(t, "", resp.InstallSessionKey)
+
+	devResp, err := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, testDevid, device.Devid)
+	assert.Equal(t, pb.InstallStatus_Requested, device.InstallStatus)
+	assert.Equal(t, "test-alias", device.Alias)
+	assert.Equal(t, req.Latitude, device.Latitude)
+	assert.Equal(t, req.Longitude, device.Longitude)
+	assert.Equal(t, "contact@ino-on.com", device.Installer)
+	assert.InDelta(t, current.Unix(), device.InstallDate.AsTime().Unix(), 3)
+}
