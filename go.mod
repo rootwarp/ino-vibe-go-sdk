@@ -6,6 +6,7 @@ require (
 	bitbucket.org/ino-on/ino-vibe-api v0.0.0-20200715081825-89348a8b9226
 	cloud.google.com/go v0.58.0 // indirect
 	github.com/bojand/ghz v0.52.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway v1.14.6 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
