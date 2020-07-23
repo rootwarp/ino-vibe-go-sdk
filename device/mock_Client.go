@@ -14,6 +14,29 @@ type MockClient struct {
 	mock.Mock
 }
 
+// CompleteInstall provides a mock function with given fields: _a0, _a1
+func (_m *MockClient) CompleteInstall(_a0 context.Context, _a1 *inovibe_api_v3.CompleteInstallRequest) (*inovibe_api_v3.CompleteInstallResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *inovibe_api_v3.CompleteInstallResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *inovibe_api_v3.CompleteInstallRequest) *inovibe_api_v3.CompleteInstallResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*inovibe_api_v3.CompleteInstallResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *inovibe_api_v3.CompleteInstallRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Detail provides a mock function with given fields: _a0, _a1
 func (_m *MockClient) Detail(_a0 context.Context, _a1 string) (*inovibe_api_v3.DeviceResponse, error) {
 	ret := _m.Called(_a0, _a1)
@@ -29,6 +52,29 @@ func (_m *MockClient) Detail(_a0 context.Context, _a1 string) (*inovibe_api_v3.D
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Discard provides a mock function with given fields: _a0, _a1
+func (_m *MockClient) Discard(_a0 context.Context, _a1 *inovibe_api_v3.DiscardRequest) (*inovibe_api_v3.DiscardResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *inovibe_api_v3.DiscardResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *inovibe_api_v3.DiscardRequest) *inovibe_api_v3.DiscardResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*inovibe_api_v3.DiscardResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *inovibe_api_v3.DiscardRequest) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
@@ -106,6 +152,52 @@ func (_m *MockClient) StatusLog(_a0 context.Context, _a1 *inovibe_api_v3.StatusL
 	return r0, r1
 }
 
+// Uninstall provides a mock function with given fields: _a0, _a1
+func (_m *MockClient) Uninstall(_a0 context.Context, _a1 *inovibe_api_v3.UninstallRequest) (*inovibe_api_v3.UninstallResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *inovibe_api_v3.UninstallResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *inovibe_api_v3.UninstallRequest) *inovibe_api_v3.UninstallResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*inovibe_api_v3.UninstallResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *inovibe_api_v3.UninstallRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Uninstalling provides a mock function with given fields: _a0, _a1
+func (_m *MockClient) Uninstalling(_a0 context.Context, _a1 *inovibe_api_v3.UninstallingRequest) (*inovibe_api_v3.UninstallingResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *inovibe_api_v3.UninstallingResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *inovibe_api_v3.UninstallingRequest) *inovibe_api_v3.UninstallingResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*inovibe_api_v3.UninstallingResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *inovibe_api_v3.UninstallingRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpdateConfig provides a mock function with given fields: _a0, _a1
 func (_m *MockClient) UpdateConfig(_a0 context.Context, _a1 *inovibe_api_v3.DeviceConfigUpdateRequest) (*inovibe_api_v3.DeviceResponse, error) {
 	ret := _m.Called(_a0, _a1)
@@ -167,6 +259,29 @@ func (_m *MockClient) UpdateStatus(_a0 context.Context, _a1 *inovibe_api_v3.Devi
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *inovibe_api_v3.DeviceStatusUpdateRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// WaitCompleteInstall provides a mock function with given fields: _a0, _a1
+func (_m *MockClient) WaitCompleteInstall(_a0 context.Context, _a1 *inovibe_api_v3.WaitCompleteInstallRequest) (*inovibe_api_v3.WaitCompleteInstallResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *inovibe_api_v3.WaitCompleteInstallResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *inovibe_api_v3.WaitCompleteInstallRequest) *inovibe_api_v3.WaitCompleteInstallResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*inovibe_api_v3.WaitCompleteInstallResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *inovibe_api_v3.WaitCompleteInstallRequest) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
