@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -34,21 +35,11 @@ func TestAuthInvalidCredentialFormat(t *testing.T) {
 }
 
 func TestAuthLoadSuccess(t *testing.T) {
-	credFilePath = "./credentials.json"
-	f, _ := os.Create("./credentials.json")
-	_, err := f.Write([]byte(`{"access_token": "hello world", "token_type": "bearer"}`))
-	if err != nil {
-		panic(err)
-	}
-	f.Close()
-
-	defer os.Remove(credFilePath)
-
+	credFilePath = os.Getenv("INOVIBE_APPLICATION_CREDENTIALS")
 	oauthToken, err := LoadCredentials()
 
+	assert.NotNil(t, oauthToken)
 	assert.Nil(t, err)
-	assert.Equal(t, "hello world", oauthToken.AccessToken)
-	assert.Equal(t, "bearer", oauthToken.TokenType)
 }
 
 func TestAuthDefaultFilePath(t *testing.T) {
@@ -59,4 +50,20 @@ func TestAuthDefaultFilePath(t *testing.T) {
 	assert.Equal(t, home+"/.inovibe/credentials.json", credFilePath)
 }
 
-// TODO: Issue credentials.
+func TestAuthIssueToken(t *testing.T) {
+	clientID := "O9so4gOpXmnC6pUHc5rOeslkUA2bXgLK"
+	clientSecret := "AV5xpMVFt93uvvPHsBHvB8nJERnamLYxOkBreqWptRSEDcS8QDUmflgMPQVVR5Hv"
+	audience := "https://grpc.ino-vibe.ino-on.dev"
+
+	token, err := IssueToken(clientID, clientSecret, audience)
+
+	assert.NotNil(t, token)
+	assert.Nil(t, err)
+}
+
+func TestAuthCheckTokenValid(t *testing.T) {
+	token, _ := LoadCredentials()
+
+	fmt.Println(token)
+
+}

@@ -272,3 +272,222 @@ func TestStatusLogValidParam(t *testing.T) {
 		assert.True(t, log.Time.Seconds <= timeEnd.Unix())
 	}
 }
+
+func TestInstall(t *testing.T) {
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	_, _ = cli.UpdateInfo(ctx, &pb.DeviceInfoUpdateRequest{
+		Devid:     testDevid,
+		Alias:     &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: ""},
+		Latitude:  &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: 0},
+		Longitude: &pb.DeviceInfoUpdateRequest_LongitudeValue{LongitudeValue: 0},
+		Installer: &pb.DeviceInfoUpdateRequest_InstallerValue{InstallerValue: ""},
+	})
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+
+	req := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	// First Test PrepareInstall
+	current := time.Now()
+
+	resp, err := cli.PrepareInstall(ctx, req)
+
+	// Assert
+	assert.Nil(t, err)
+	assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResponseCode)
+	assert.Equal(t, testDevid, resp.Devid)
+	assert.NotEqual(t, "", resp.InstallSessionKey)
+
+	devResp, _ := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, testDevid, device.Devid)
+	assert.Equal(t, pb.InstallStatus_Requested, device.InstallStatus)
+	assert.Equal(t, req.Alias, device.Alias)
+	assert.Equal(t, req.Latitude, device.Latitude)
+	assert.Equal(t, req.Longitude, device.Longitude)
+	assert.Equal(t, req.Installer, device.Installer)
+	assert.InDelta(t, current.Unix(), device.InstallDate.AsTime().Unix(), 3)
+
+	// Second Test CompleteInstall
+	completeResp, err := cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{
+		Devid:             testDevid,
+		InstallSessionKey: resp.InstallSessionKey,
+	})
+
+	// Asserts.
+	assert.Equal(t, pb.ResponseCode_SUCCESS, completeResp.ResponseCode)
+
+	devResp, _ = cli.Detail(ctx, testDevid)
+	device = devResp.Devices[0]
+
+	assert.Equal(t, testDevid, device.Devid)
+	assert.Equal(t, pb.InstallStatus_Installed, device.InstallStatus)
+	assert.Equal(t, resp.InstallSessionKey, device.InstallSessionKey)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+}
+
+func TestWaitInstallComplete(t *testing.T) {
+	// Prepare
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	_, _ = cli.PrepareInstall(ctx, prepareReq)
+
+	// Test
+	_, err := cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
+
+	// Asserts
+	assert.Nil(t, err)
+
+	devResp, _ := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, pb.InstallStatus_WaitInstallComplete, device.InstallStatus)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+}
+
+func TestUninstalling(t *testing.T) {
+	// Prepare
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
+
+	// Test
+	_, err := cli.Uninstalling(ctx, &pb.UninstallingRequest{Devid: testDevid})
+
+	// Asserts
+	assert.Nil(t, err)
+
+	devResp, _ := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, pb.InstallStatus_Uninstalling, device.InstallStatus)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+}
+
+func TestUninstall(t *testing.T) {
+	// Prepare
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
+
+	// Test
+	_, err := cli.Uninstall(ctx, &pb.UninstallRequest{Devid: testDevid})
+
+	// Asserts
+	assert.Nil(t, err)
+
+	devResp, _ := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, pb.InstallStatus_Initial, device.InstallStatus)
+	assert.Equal(t, "", device.Alias)
+	assert.Equal(t, float64(0), device.Latitude)
+	assert.Equal(t, float64(0), device.Longitude)
+	assert.Equal(t, "", device.Installer)
+	assert.Nil(t, device.InstallDate)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+}
+
+func TestDiscard(t *testing.T) {
+	// Prepare
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
+
+	// Test
+	_, err := cli.Discard(ctx, &pb.DiscardRequest{Devid: testDevid})
+
+	// Asserts
+	assert.Nil(t, err)
+
+	devResp, _ := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, pb.InstallStatus_Discarded, device.InstallStatus)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+}
