@@ -1,10 +1,17 @@
 package user
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	if os.Getenv("TEST_TARGET") != "" {
+		serverURL = "grpc-dev.ino-vibe.ino-on.dev:443"
+	}
+}
 
 func TestUserRegisterDeviceToken(t *testing.T) {
 	cli, err := NewClient()

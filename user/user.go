@@ -32,7 +32,7 @@ type client struct {
 }
 
 var (
-	serverURL = "user.ino-vibe.ino-on.dev:443"
+	serverURL = "grpc.ino-vibe.ino-on.dev:443"
 )
 
 // RegisterDeviceToken register device token to receive mobile push notification.
