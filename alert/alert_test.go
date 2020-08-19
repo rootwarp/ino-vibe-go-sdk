@@ -61,7 +61,7 @@ func TestListAlertByDeviceID(t *testing.T) {
 
 		if request.MaxCount == 0 {
 			// Default value matches to 10.
-			assert.Equal(t, 10, len(resp.Alerts))
+			assert.True(t, 10 >= len(resp.Alerts))
 		} else {
 			assert.Equal(t, int(request.MaxCount), len(resp.Alerts))
 		}

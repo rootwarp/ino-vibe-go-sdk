@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	serverURL = "thingplug.ino-vibe.ino-on.dev:443"
+	serverURL = "grpc.ino-vibe.ino-on.dev:443"
 )
 
 // Client provides control interfaces for Ino-Vibe.

@@ -17,14 +17,18 @@ var (
 func init() {
 	target := os.Getenv("TEST_TARGET")
 	if target != "" {
-		serverURL = fmt.Sprintf("%s-%s", target, serverURL)
-	}
+		serverURL = "grpc-dev.ino-vibe.ino-on.dev:443"
 
-	fmt.Println("Test ", serverURL)
+		if target == "feature" {
+			serverURL = target + "-" + serverURL
+		}
+	}
+	fmt.Println(serverURL)
+
 	cli, _ = NewClient()
 }
 
-func TestThingplugPowrOff(t *testing.T) {
+func TestThingplugPowerOff(t *testing.T) {
 	ctx := context.Background()
 	err := cli.PowerOff(ctx, testDevID)
 
