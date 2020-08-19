@@ -2,12 +2,26 @@ package wave
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	target := os.Getenv("TEST_TARGET")
+	if target != "" {
+		serverURL = "grpc-dev.ino-vibe.ino-on.dev:443"
+
+		if target == "feature" {
+			serverURL = target + "-" + serverURL
+		}
+	}
+	fmt.Println(serverURL)
+}
 
 func TestWaveDetailSuccess(t *testing.T) {
 	ctx := context.Background()

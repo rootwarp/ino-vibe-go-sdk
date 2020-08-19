@@ -21,9 +21,12 @@ func init() {
 	target := os.Getenv("TEST_TARGET")
 	if target != "" {
 		serverURL = "grpc-dev.ino-vibe.ino-on.dev:443"
-	}
 
-	fmt.Println("Test ", serverURL)
+		if target == "feature" {
+			serverURL = target + "-" + serverURL
+		}
+	}
+	fmt.Println(serverURL)
 }
 
 func TestGroupGetName(t *testing.T) {
