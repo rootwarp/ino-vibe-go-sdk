@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -11,6 +12,7 @@ func init() {
 	if os.Getenv("TEST_TARGET") != "" {
 		serverURL = "grpc-dev.ino-vibe.ino-on.dev:443"
 	}
+	fmt.Println(serverURL)
 }
 
 func TestUserRegisterDeviceToken(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	serverURL = "group.ino-vibe.ino-on.dev:443"
+	serverURL = "grpc.ino-vibe.ino-on.dev:443"
 )
 
 var (
