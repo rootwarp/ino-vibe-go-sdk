@@ -17,11 +17,7 @@ import (
 func init() {
 	target := os.Getenv("TEST_TARGET")
 	if target != "" {
-		serverURL = "grpc-dev.ino-vibe.ino-on.dev:443"
-
-		if target == "feature" {
-			serverURL = target + "-" + serverURL
-		}
+		serverURL = target + "-" + serverURL
 	}
 	fmt.Println(serverURL)
 }
