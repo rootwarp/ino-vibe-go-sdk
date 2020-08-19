@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	serverURL = "alert.ino-vibe.ino-on.dev:443"
+	serverURL = "grpc.ino-vibe.ino-on.dev:443"
 )
 
 // Client provides API interfaces to access alerts.
