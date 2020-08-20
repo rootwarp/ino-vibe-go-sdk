@@ -17,10 +17,9 @@ import (
 func init() {
 	target := os.Getenv("TEST_TARGET")
 	if target != "" {
-		serverURL = fmt.Sprintf("%s-%s", target, serverURL)
+		serverURL = target + "-" + serverURL
 	}
-
-	fmt.Println("Test ", serverURL)
+	fmt.Println(serverURL)
 }
 
 func TestGetDeviceListUnauthorized(t *testing.T) {
@@ -224,6 +223,8 @@ func TestStatusLogDefaultParam(t *testing.T) {
 
 	current := time.Now()
 	resp, err := cli.StatusLog(ctx, req)
+
+	fmt.Printf("%+v\n", err)
 
 	assert.Nil(t, err)
 	assert.Equal(t, testDevid, resp.Devid)

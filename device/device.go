@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	serverURL = "device.ino-vibe.ino-on.dev:443"
+	serverURL = "grpc.ino-vibe.ino-on.dev:443"
 )
 
 // Client is client for device instance.

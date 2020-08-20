@@ -1,10 +1,20 @@
 package user
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	target := os.Getenv("TEST_TARGET")
+	if target != "" {
+		serverURL = target + "-" + serverURL
+	}
+	fmt.Println(serverURL)
+}
 
 func TestUserRegisterDeviceToken(t *testing.T) {
 	cli, err := NewClient()

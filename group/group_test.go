@@ -20,10 +20,9 @@ var (
 func init() {
 	target := os.Getenv("TEST_TARGET")
 	if target != "" {
-		serverURL = fmt.Sprintf("%s-%s", target, serverURL)
+		serverURL = target + "-" + serverURL
 	}
-
-	fmt.Println("Test ", serverURL)
+	fmt.Println(serverURL)
 }
 
 func TestGroupGetName(t *testing.T) {

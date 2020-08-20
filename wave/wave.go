@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	serverURL = "wave.ino-vibe.ino-on.dev:443"
+	serverURL = "grpc.ino-vibe.ino-on.dev:443"
 )
 
 // Client provides interfaces.

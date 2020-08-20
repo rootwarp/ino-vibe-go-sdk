@@ -17,14 +17,14 @@ var (
 func init() {
 	target := os.Getenv("TEST_TARGET")
 	if target != "" {
-		serverURL = fmt.Sprintf("%s-%s", target, serverURL)
+		serverURL = target + "-" + serverURL
 	}
+	fmt.Println(serverURL)
 
-	fmt.Println("Test ", serverURL)
 	cli, _ = NewClient()
 }
 
-func TestThingplugPowrOff(t *testing.T) {
+func TestThingplugPowerOff(t *testing.T) {
 	ctx := context.Background()
 	err := cli.PowerOff(ctx, testDevID)
 
