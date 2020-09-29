@@ -322,6 +322,9 @@ func TestInstall(t *testing.T) {
 	assert.Equal(t, req.Installer, device.Installer)
 	assert.InDelta(t, current.Unix(), device.InstallDate.AsTime().Unix(), 3)
 
+	// Force change to WaitCompleteInstall status.
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
+
 	// Second Test CompleteInstall
 	completeResp, err := cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{
 		Devid:             testDevid,
@@ -396,6 +399,7 @@ func TestUninstalling(t *testing.T) {
 	}
 
 	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
 
 	// Test
@@ -432,6 +436,7 @@ func TestUninstall(t *testing.T) {
 	}
 
 	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
 
 	// Test
@@ -473,6 +478,7 @@ func TestDiscard(t *testing.T) {
 	}
 
 	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
 
 	// Test
