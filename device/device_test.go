@@ -65,18 +65,21 @@ func TestUpdateDeviceInfo(t *testing.T) {
 
 	current := time.Now()
 	r := rand.New(rand.NewSource(current.Unix()))
+
+	// InstallSession key should not be random variable because it has foreign key constraints.
 	req := &pb.DeviceInfoUpdateRequest{
-		Devid:       testDevID,
-		Alias:       &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: fmt.Sprintf("alias-%d", r.Uint32())},
-		GroupId:     &pb.DeviceInfoUpdateRequest_GroupIdValue{GroupIdValue: fmt.Sprintf("group-%d", r.Uint32())},
-		Latitude:    &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: r.Float64()},
-		Longitude:   &pb.DeviceInfoUpdateRequest_LongitudeValue{LongitudeValue: r.Float64()},
-		Installer:   &pb.DeviceInfoUpdateRequest_InstallerValue{InstallerValue: fmt.Sprintf("installer-%d", r.Uint32())},
-		InstallDate: &pb.DeviceInfoUpdateRequest_InstallDateValue{InstallDateValue: &timestamp.Timestamp{Seconds: current.Unix(), Nanos: 0}},
-		DevType:     &pb.DeviceInfoUpdateRequest_DevTypeValue{DevTypeValue: pb.DeviceType(r.Int() % 3)},
-		AppFwVer:    &pb.DeviceInfoUpdateRequest_AppFwVerValue{AppFwVerValue: fmt.Sprintf("app-%d", r.Uint32())},
-		LoraFwVer:   &pb.DeviceInfoUpdateRequest_LoraFwVerValue{LoraFwVerValue: fmt.Sprintf("lora-%d", r.Uint32())},
-		RecogType:   &pb.DeviceInfoUpdateRequest_RecogTypeValue{RecogTypeValue: pb.RecogType(r.Int() % 2)},
+		Devid:          testDevID,
+		Alias:          &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: fmt.Sprintf("alias-%d", r.Uint32())},
+		GroupId:        &pb.DeviceInfoUpdateRequest_GroupIdValue{GroupIdValue: fmt.Sprintf("group-%d", r.Uint32())},
+		Latitude:       &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: r.Float64()},
+		Longitude:      &pb.DeviceInfoUpdateRequest_LongitudeValue{LongitudeValue: r.Float64()},
+		Installer:      &pb.DeviceInfoUpdateRequest_InstallerValue{InstallerValue: fmt.Sprintf("installer-%d", r.Uint32())},
+		InstallDate:    &pb.DeviceInfoUpdateRequest_InstallDateValue{InstallDateValue: &timestamp.Timestamp{Seconds: current.Unix(), Nanos: 0}},
+		DevType:        &pb.DeviceInfoUpdateRequest_DevTypeValue{DevTypeValue: pb.DeviceType(r.Int() % 3)},
+		AppFwVer:       &pb.DeviceInfoUpdateRequest_AppFwVerValue{AppFwVerValue: fmt.Sprintf("app-%d", r.Uint32())},
+		LoraFwVer:      &pb.DeviceInfoUpdateRequest_LoraFwVerValue{LoraFwVerValue: fmt.Sprintf("lora-%d", r.Uint32())},
+		RecogType:      &pb.DeviceInfoUpdateRequest_RecogTypeValue{RecogTypeValue: pb.RecogType(r.Int() % 2)},
+		InstallSession: &pb.DeviceInfoUpdateRequest_InstallSessionValue{InstallSessionValue: "fff75f20fc45a6fa0fb8445218b5a700244c93e2a7c7274e5f063e39fef230fd"},
 	}
 
 	resp, err := cli.UpdateInfo(ctx, req)
@@ -98,6 +101,7 @@ func TestUpdateDeviceInfo(t *testing.T) {
 	assert.Equal(t, req.GetAppFwVerValue(), resp.Devices[0].AppFwVer)
 	assert.Equal(t, req.GetLoraFwVerValue(), resp.Devices[0].LoraFwVer)
 	assert.Equal(t, req.GetRecogTypeValue(), resp.Devices[0].RecogType)
+	assert.Equal(t, req.GetInstallSessionValue(), resp.Devices[0].InstallSessionKey)
 }
 
 func TestUpdateDeviceStatus(t *testing.T) {
