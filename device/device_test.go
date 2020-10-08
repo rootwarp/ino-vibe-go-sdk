@@ -358,19 +358,16 @@ func TestWaitInstallComplete(t *testing.T) {
 	ctx := context.Background()
 	cli, _ := NewClient()
 
-	// MGIDEV-956:
-	/*
-		prepareReq := &pb.PrepareInstallRequest{
-			Devid:     testDevid,
-			Alias:     "test-alias",
-			Latitude:  36.1,
-			Longitude: 127.1,
-			Installer: "contact@ino-on.com",
-			GroupId:   "",
-		}
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
 
-		_, _ = cli.PrepareInstall(ctx, prepareReq)
-	*/
+	_, _ = cli.PrepareInstall(ctx, prepareReq)
 
 	cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
 		Devid:         testDevid,
@@ -393,6 +390,33 @@ func TestWaitInstallComplete(t *testing.T) {
 		Devid:         testDevid,
 		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
 	})
+}
+
+func TestInstallCompleteOnOtherStatus(t *testing.T) {
+	testDevid := "000000030000000000000001"
+
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	installResp, _ := cli.PrepareInstall(ctx, prepareReq)
+
+	// TODO: Ommit wait complete install sequence.
+	resp, err := cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{
+		Devid:             testDevid,
+		InstallSessionKey: installResp.InstallSessionKey,
+	})
+
+	assert.Nil(t, err)
+	assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResponseCode)
 }
 
 func TestUninstalling(t *testing.T) {
