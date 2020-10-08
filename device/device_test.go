@@ -354,16 +354,24 @@ func TestWaitInstallComplete(t *testing.T) {
 	ctx := context.Background()
 	cli, _ := NewClient()
 
-	prepareReq := &pb.PrepareInstallRequest{
-		Devid:     testDevid,
-		Alias:     "test-alias",
-		Latitude:  36.1,
-		Longitude: 127.1,
-		Installer: "contact@ino-on.com",
-		GroupId:   "",
-	}
+	// MGIDEV-956:
+	/*
+		prepareReq := &pb.PrepareInstallRequest{
+			Devid:     testDevid,
+			Alias:     "test-alias",
+			Latitude:  36.1,
+			Longitude: 127.1,
+			Installer: "contact@ino-on.com",
+			GroupId:   "",
+		}
 
-	_, _ = cli.PrepareInstall(ctx, prepareReq)
+		_, _ = cli.PrepareInstall(ctx, prepareReq)
+	*/
+
+	cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Requested},
+	})
 
 	// Test
 	_, err := cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
