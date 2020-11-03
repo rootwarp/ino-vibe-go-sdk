@@ -97,3 +97,25 @@ func TestListAlertByGroupID(t *testing.T) {
 		}
 	}
 }
+
+func TestListAlertByInstallSession(t *testing.T) {
+	cli, _ := NewClient()
+	defer cli.Close()
+
+	requests := []*pb.AlertListRequest{
+		{
+			Search: &pb.AlertListRequest_InstallSessionKey{InstallSessionKey: "122624eb38b341e2697162fc1db37735406b4adfe6575982d964204181d14132"},
+		},
+	}
+
+	for _, request := range requests {
+		resp, err := cli.List(context.Background(), request)
+
+		assert.Nil(t, err)
+
+		for _, alert := range resp.GetAlerts() {
+			assert.Equal(t, "00000125d02544fffefdff11", alert.Devid)
+			assert.Equal(t, "0bee7b43-0b57-4b54-9062-430e2bd3fa79", alert.GetAlarmGroup().GetGroupid())
+		}
+	}
+}
