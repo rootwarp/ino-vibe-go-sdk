@@ -65,18 +65,21 @@ func TestUpdateDeviceInfo(t *testing.T) {
 
 	current := time.Now()
 	r := rand.New(rand.NewSource(current.Unix()))
+
+	// InstallSession key should not be random variable because it has foreign key constraints.
 	req := &pb.DeviceInfoUpdateRequest{
-		Devid:       testDevID,
-		Alias:       &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: fmt.Sprintf("alias-%d", r.Uint32())},
-		GroupId:     &pb.DeviceInfoUpdateRequest_GroupIdValue{GroupIdValue: fmt.Sprintf("group-%d", r.Uint32())},
-		Latitude:    &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: r.Float64()},
-		Longitude:   &pb.DeviceInfoUpdateRequest_LongitudeValue{LongitudeValue: r.Float64()},
-		Installer:   &pb.DeviceInfoUpdateRequest_InstallerValue{InstallerValue: fmt.Sprintf("installer-%d", r.Uint32())},
-		InstallDate: &pb.DeviceInfoUpdateRequest_InstallDateValue{InstallDateValue: &timestamp.Timestamp{Seconds: current.Unix(), Nanos: 0}},
-		DevType:     &pb.DeviceInfoUpdateRequest_DevTypeValue{DevTypeValue: pb.DeviceType(r.Int() % 3)},
-		AppFwVer:    &pb.DeviceInfoUpdateRequest_AppFwVerValue{AppFwVerValue: fmt.Sprintf("app-%d", r.Uint32())},
-		LoraFwVer:   &pb.DeviceInfoUpdateRequest_LoraFwVerValue{LoraFwVerValue: fmt.Sprintf("lora-%d", r.Uint32())},
-		RecogType:   &pb.DeviceInfoUpdateRequest_RecogTypeValue{RecogTypeValue: pb.RecogType(r.Int() % 2)},
+		Devid:          testDevID,
+		Alias:          &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: fmt.Sprintf("alias-%d", r.Uint32())},
+		GroupId:        &pb.DeviceInfoUpdateRequest_GroupIdValue{GroupIdValue: fmt.Sprintf("group-%d", r.Uint32())},
+		Latitude:       &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: r.Float64()},
+		Longitude:      &pb.DeviceInfoUpdateRequest_LongitudeValue{LongitudeValue: r.Float64()},
+		Installer:      &pb.DeviceInfoUpdateRequest_InstallerValue{InstallerValue: fmt.Sprintf("installer-%d", r.Uint32())},
+		InstallDate:    &pb.DeviceInfoUpdateRequest_InstallDateValue{InstallDateValue: &timestamp.Timestamp{Seconds: current.Unix(), Nanos: 0}},
+		DevType:        &pb.DeviceInfoUpdateRequest_DevTypeValue{DevTypeValue: pb.DeviceType(r.Int() % 3)},
+		AppFwVer:       &pb.DeviceInfoUpdateRequest_AppFwVerValue{AppFwVerValue: fmt.Sprintf("app-%d", r.Uint32())},
+		LoraFwVer:      &pb.DeviceInfoUpdateRequest_LoraFwVerValue{LoraFwVerValue: fmt.Sprintf("lora-%d", r.Uint32())},
+		RecogType:      &pb.DeviceInfoUpdateRequest_RecogTypeValue{RecogTypeValue: pb.RecogType(r.Int() % 2)},
+		InstallSession: &pb.DeviceInfoUpdateRequest_InstallSessionValue{InstallSessionValue: "fff75f20fc45a6fa0fb8445218b5a700244c93e2a7c7274e5f063e39fef230fd"},
 	}
 
 	resp, err := cli.UpdateInfo(ctx, req)
@@ -98,6 +101,7 @@ func TestUpdateDeviceInfo(t *testing.T) {
 	assert.Equal(t, req.GetAppFwVerValue(), resp.Devices[0].AppFwVer)
 	assert.Equal(t, req.GetLoraFwVerValue(), resp.Devices[0].LoraFwVer)
 	assert.Equal(t, req.GetRecogTypeValue(), resp.Devices[0].RecogType)
+	assert.Equal(t, req.GetInstallSessionValue(), resp.Devices[0].InstallSessionKey)
 }
 
 func TestUpdateDeviceStatus(t *testing.T) {
@@ -322,6 +326,9 @@ func TestInstall(t *testing.T) {
 	assert.Equal(t, req.Installer, device.Installer)
 	assert.InDelta(t, current.Unix(), device.InstallDate.AsTime().Unix(), 3)
 
+	// Force change to WaitCompleteInstall status.
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
+
 	// Second Test CompleteInstall
 	completeResp, err := cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{
 		Devid:             testDevid,
@@ -362,6 +369,11 @@ func TestWaitInstallComplete(t *testing.T) {
 
 	_, _ = cli.PrepareInstall(ctx, prepareReq)
 
+	cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Requested},
+	})
+
 	// Test
 	_, err := cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 
@@ -380,6 +392,33 @@ func TestWaitInstallComplete(t *testing.T) {
 	})
 }
 
+func TestInstallCompleteOnOtherStatus(t *testing.T) {
+	testDevid := "000000030000000000000001"
+
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	installResp, _ := cli.PrepareInstall(ctx, prepareReq)
+
+	// TODO: Ommit wait complete install sequence.
+	resp, err := cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{
+		Devid:             testDevid,
+		InstallSessionKey: installResp.InstallSessionKey,
+	})
+
+	assert.Nil(t, err)
+	assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResponseCode)
+}
+
 func TestUninstalling(t *testing.T) {
 	// Prepare
 	testDevid := "000000030000000000000001"
@@ -396,6 +435,7 @@ func TestUninstalling(t *testing.T) {
 	}
 
 	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
 
 	// Test
@@ -432,6 +472,7 @@ func TestUninstall(t *testing.T) {
 	}
 
 	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
 
 	// Test
@@ -473,7 +514,44 @@ func TestDiscard(t *testing.T) {
 	}
 
 	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
+
+	// Test
+	_, err := cli.Discard(ctx, &pb.DiscardRequest{Devid: testDevid})
+
+	// Asserts
+	assert.Nil(t, err)
+
+	devResp, _ := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, pb.InstallStatus_Discarded, device.InstallStatus)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+}
+
+func TestDiscardOnOtherStatus(t *testing.T) {
+	// Prepare
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	// Intensionally call only PrepareInstall for testing on "requested" state.
+	_, _ = cli.PrepareInstall(ctx, prepareReq)
 
 	// Test
 	_, err := cli.Discard(ctx, &pb.DiscardRequest{Devid: testDevid})
