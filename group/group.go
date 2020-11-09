@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
+	"io"
 	"log"
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
@@ -26,12 +28,15 @@ var (
 
 // Group is data structure for describing Auth0 Group.
 type Group struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Parent   *Group  `json:"parent"`
+	Children []Group `json:"children"`
 }
 
 // Client is client for Group.
 type Client interface {
+	List(ctx context.Context, groupID string) ([]Group, error)
 	GetName(ctx context.Context, groupID string) (string, error)
 	GetID(ctx context.Context, groupName string) (string, error)
 	GetIDs(ctx context.Context, groupName []string) ([]string, error)
@@ -65,6 +70,56 @@ func (c *client) getGroupClient() pb.GroupServiceClient {
 	}
 
 	return c.groupClient
+}
+
+func (c *client) List(ctx context.Context, groupID string) ([]Group, error) {
+	cli := c.getGroupClient()
+
+	listCli, err := cli.List(ctx, &pb.GroupRequest{Groupid: groupID})
+	fmt.Println(err)
+	if err != nil {
+		return []Group{}, nil
+	}
+
+	pbGroups := map[string]*pb.Group{}
+	groups := map[string]*Group{}
+
+	for {
+		group, err := listCli.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				fmt.Println(err)
+				return []Group{}, err
+			}
+		}
+
+		pbGroups[group.Groupid] = group
+		groups[group.Groupid] = &Group{ID: group.Groupid, Name: group.Name, Parent: nil, Children: []Group{}}
+	}
+
+	rootGroups := make([]*Group, 0)
+
+	for id, g := range pbGroups {
+		curGroup := groups[id]
+		if parent, ok := groups[g.ParentId]; ok {
+			curGroup.Parent = parent
+			parent.Children = append(parent.Children, *curGroup)
+		} else {
+			rootGroups = append(rootGroups, curGroup)
+		}
+	}
+
+	respGroups := make([]Group, len(rootGroups))
+
+	i := 0
+	for _, g := range rootGroups {
+		respGroups[i] = *g
+		i++
+	}
+
+	return respGroups, nil
 }
 
 // GetName returns group's name.

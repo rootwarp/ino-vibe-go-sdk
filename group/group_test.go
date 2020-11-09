@@ -25,6 +25,52 @@ func init() {
 	fmt.Println(serverURL)
 }
 
+func TestGroupList(t *testing.T) {
+	partialRootGroups := []string{
+		"0bee7b43-0b57-4b54-9062-430e2bd3fa79", // Ino-on
+		"406b3434-7ddf-4af8-b357-cc144415bcb7", // SK E&S
+		"1590fe0a-e416-48f7-b9c7-d8f4f37f4d64", // testing
+	}
+
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	groups, _ := cli.List(ctx, "")
+	groupIDs := map[string]bool{}
+	for _, g := range groups {
+		groupIDs[g.ID] = true
+		assert.Nil(t, g.Parent)
+	}
+
+	for _, rootID := range partialRootGroups {
+		assert.Contains(t, groupIDs, rootID)
+	}
+}
+
+func TestGroupListForSelected(t *testing.T) {
+	/*
+		이노온 contains
+		이노온 - 개발
+		이노온 - 운영
+	*/
+
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	groups, _ := cli.List(ctx, "0bee7b43-0b57-4b54-9062-430e2bd3fa79")
+
+	assert.Equal(t, 1, len(groups))
+	assert.Equal(t, "0bee7b43-0b57-4b54-9062-430e2bd3fa79", groups[0].ID)
+
+	childrenIDs := make([]string, len(groups[0].Children))
+	for i, children := range groups[0].Children {
+		childrenIDs[i] = children.ID
+	}
+
+	assert.Contains(t, childrenIDs, "607f9db4-7eee-4a08-894d-356c8a462ae1")
+	assert.Contains(t, childrenIDs, "b09a8694-6ccb-4cb7-9ffa-57681869f54d")
+}
+
 func TestGroupGetName(t *testing.T) {
 	expectations := []struct {
 		GroupID    string
@@ -149,8 +195,6 @@ func TestGroupParentUsers(t *testing.T) {
 	ctx := context.Background()
 
 	groupID, err := cli.GetID(ctx, "이노온-개발-서버")
-	fmt.Println(groupID, err)
-
 	emails, err := cli.GetParentUsers(ctx, groupID)
 
 	assert.Contains(t, emails, "child_tester@ino-on.com")
@@ -159,6 +203,7 @@ func TestGroupParentUsers(t *testing.T) {
 	groupID, err = cli.GetID(ctx, "이노온")
 	emails, err = cli.GetParentUsers(ctx, groupID)
 
+	assert.Nil(t, err)
 	assert.Contains(t, emails, "parent_tester@ino-on.com")
 	assert.NotContains(t, emails, "child_tester@ino-on.com")
 }
