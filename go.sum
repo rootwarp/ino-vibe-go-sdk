@@ -20,6 +20,8 @@ bitbucket.org/ino-on/ino-vibe-api v0.0.0-20201103030108-833cdcce6f55 h1:q6427qkQ
 bitbucket.org/ino-on/ino-vibe-api v0.0.0-20201103030108-833cdcce6f55/go.mod h1:gXGZ8At6+NCndHqesQOdsnwanmV3hFQ0E8Ii+sf1Dvk=
 bitbucket.org/ino-on/ino-vibe-api v0.0.0-20201109021238-7a126c102849 h1:oH+wb+XorvvX5U5Lov5lOv2r6O82fEfZdUiRCnBS05U=
 bitbucket.org/ino-on/ino-vibe-api v0.0.0-20201109021238-7a126c102849/go.mod h1:gXGZ8At6+NCndHqesQOdsnwanmV3hFQ0E8Ii+sf1Dvk=
+bitbucket.org/ino-on/ino-vibe-api v0.0.0-20201110045459-476f8b38af18 h1:BzXDbNlhL116P2ihffZJS0Ty9TiQSnrlA+l6QCVnPfc=
+bitbucket.org/ino-on/ino-vibe-api v0.0.0-20201110045459-476f8b38af18/go.mod h1:gXGZ8At6+NCndHqesQOdsnwanmV3hFQ0E8Ii+sf1Dvk=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.37.4 h1:glPeL3BQJsbF6aIIYfZizMwc5LTYz250bDMjttbBGAU=
@@ -343,6 +345,8 @@ golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0 h1:5kGOVHlq0euqwzgTC9Vu15p6f
 golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
 golang.org/x/net v0.0.0-20201031054903-ff519b6c9102 h1:42cLlJJdEh+ySyeUUbEQ5bsTiq8voBeTuweGVkY6Puw=
 golang.org/x/net v0.0.0-20201031054903-ff519b6c9102/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
+golang.org/x/net v0.0.0-20201110031124-69a78807bb2b h1:uwuIcX0g4Yl1NC5XAz37xsr2lTtcqevgzYNVt49waME=
+golang.org/x/net v0.0.0-20201110031124-69a78807bb2b/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
@@ -406,6 +410,8 @@ golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 h1:a/mKvvZr9Jcc8oKfcmgzyp7Ow
 golang.org/x/sys v0.0.0-20201101102859-da207088b7d1/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201107080550-4d91cf3a1aaf h1:kt3wY1Lu5MJAnKTfoMR52Cu4gwvna4VTzNOiT8tY73s=
 golang.org/x/sys v0.0.0-20201107080550-4d91cf3a1aaf/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20201109165425-215b40eba54c h1:+B+zPA6081G5cEb2triOIJpcvSW4AYzmIyWAqMn2JAc=
+golang.org/x/sys v0.0.0-20201109165425-215b40eba54c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
@@ -543,6 +549,8 @@ google.golang.org/genproto v0.0.0-20201102152239-715cce707fb0 h1:d0rYPqjQfVuFe+t
 google.golang.org/genproto v0.0.0-20201102152239-715cce707fb0/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
 google.golang.org/genproto v0.0.0-20201106154455-f9bfe239b0ba h1:HocWKLuilwaaLY56cHV38rw84wJ1nscA0Rs7OnO8mm8=
 google.golang.org/genproto v0.0.0-20201106154455-f9bfe239b0ba/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
+google.golang.org/genproto v0.0.0-20201109203340-2640f1f9cdfb h1:MoNcrN5yaH+35Ge8RUwFbL7ekwq9ED2fiDpgWKrR29w=
+google.golang.org/genproto v0.0.0-20201109203340-2640f1f9cdfb/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
 google.golang.org/grpc v1.8.0/go.mod h1:yo6s7OP7yaDglbqo1J04qKzAhqBH6lvTonzMVmEdcZw=
 google.golang.org/grpc v1.17.0/go.mod h1:6QZJwpn2B+Zp71q/5VxRsJ6NXXVCE5NRUHRo+f3cWCs=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=

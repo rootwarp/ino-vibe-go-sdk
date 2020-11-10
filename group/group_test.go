@@ -207,3 +207,30 @@ func TestGroupParentUsers(t *testing.T) {
 	assert.Contains(t, emails, "parent_tester@ino-on.com")
 	assert.NotContains(t, emails, "child_tester@ino-on.com")
 }
+
+func TestGroupMembers(t *testing.T) {
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	users, err := cli.GetMembers(ctx, "0bee7b43-0b57-4b54-9062-430e2bd3fa79")
+
+	assert.Nil(t, err)
+
+	userEmailMap := map[string]bool{}
+	for _, user := range users {
+		userEmailMap[user.Email] = true
+	}
+
+	assert.Contains(t, userEmailMap, "ino-vibe@ino-on.com")
+	assert.Contains(t, userEmailMap, "develop@ino-on.com")
+}
+
+func TestGroupMembersWithEmptyGroupID(t *testing.T) {
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	users, err := cli.GetMembers(ctx, "")
+
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(users))
+}

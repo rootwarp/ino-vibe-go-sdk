@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 
 	iv_auth "github.com/rootwarp/ino-vibe-go-sdk/auth"
+	"github.com/rootwarp/ino-vibe-go-sdk/user"
 )
 
 var (
@@ -42,6 +43,7 @@ type Client interface {
 	GetIDs(ctx context.Context, groupName []string) ([]string, error)
 	GetChildGroups(ctx context.Context, groupID string) ([]Group, error)
 	GetParentUsers(ctx context.Context, groupID string) ([]string, error)
+	GetMembers(ctx context.Context, groupID string) ([]user.User, error)
 }
 
 type client struct {
@@ -219,6 +221,23 @@ func (c *client) GetParentUsers(ctx context.Context, groupID string) ([]string, 
 	}
 
 	return emails, nil
+}
+
+// GetMembers returns list of users who joined selected group.
+func (c *client) GetMembers(ctx context.Context, groupID string) ([]user.User, error) {
+	cli := c.getGroupClient()
+
+	memberResp, err := cli.Members(ctx, &pb.GroupRequest{Groupid: groupID})
+	if err != nil {
+		return []user.User{}, err
+	}
+
+	respUsers := make([]user.User, len(memberResp.Users))
+	for i, pbUser := range memberResp.Users {
+		respUsers[i] = user.User{UserID: pbUser.UserId, Email: pbUser.Email}
+	}
+
+	return respUsers, nil
 }
 
 // NewClient creates new group client.
