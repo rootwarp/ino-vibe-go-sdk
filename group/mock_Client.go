@@ -5,6 +5,7 @@ package group
 import (
 	context "context"
 
+	user "github.com/rootwarp/ino-vibe-go-sdk/user"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -73,6 +74,29 @@ func (_m *MockClient) GetIDs(ctx context.Context, groupName []string) ([]string,
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, groupName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetMembers provides a mock function with given fields: ctx, groupID
+func (_m *MockClient) GetMembers(ctx context.Context, groupID string) ([]user.User, error) {
+	ret := _m.Called(ctx, groupID)
+
+	var r0 []user.User
+	if rf, ok := ret.Get(0).(func(context.Context, string) []user.User); ok {
+		r0 = rf(ctx, groupID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]user.User)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, groupID)
 	} else {
 		r1 = ret.Error(1)
 	}
