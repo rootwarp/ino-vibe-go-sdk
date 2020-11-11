@@ -15,6 +15,12 @@ import (
 	iv_auth "github.com/rootwarp/ino-vibe-go-sdk/auth"
 )
 
+// User is entity structure for describing Auth0 user.
+type User struct {
+	UserID string
+	Email  string
+}
+
 // Client is client for write user's information.
 type Client interface {
 	RegisterDeviceToken(userID, username, deviceToken string) error

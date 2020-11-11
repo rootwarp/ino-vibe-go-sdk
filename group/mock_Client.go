@@ -123,3 +123,26 @@ func (_m *MockClient) GetParentUsers(ctx context.Context, groupID string) ([]str
 
 	return r0, r1
 }
+
+// List provides a mock function with given fields: ctx, groupID
+func (_m *MockClient) List(ctx context.Context, groupID string) ([]Group, error) {
+	ret := _m.Called(ctx, groupID)
+
+	var r0 []Group
+	if rf, ok := ret.Get(0).(func(context.Context, string) []Group); ok {
+		r0 = rf(ctx, groupID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]Group)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, groupID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

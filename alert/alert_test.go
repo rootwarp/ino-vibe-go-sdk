@@ -10,6 +10,8 @@ import (
 	pb "bitbucket.org/ino-on/ino-vibe-api"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/rootwarp/ino-vibe-go-sdk/device"
 )
 
 var (
@@ -99,12 +101,18 @@ func TestListAlertByGroupID(t *testing.T) {
 }
 
 func TestListAlertByInstallSession(t *testing.T) {
+	ctx := context.Background()
+
+	devCli, _ := device.NewClient()
+	devResp, _ := devCli.Detail(ctx, "00000125d02544fffefe276a")
+	device := devResp.Devices[0]
+
 	cli, _ := NewClient()
 	defer cli.Close()
 
 	requests := []*pb.AlertListRequest{
 		{
-			Search: &pb.AlertListRequest_InstallSessionKey{InstallSessionKey: "122624eb38b341e2697162fc1db37735406b4adfe6575982d964204181d14132"},
+			Search: &pb.AlertListRequest_InstallSessionKey{InstallSessionKey: device.InstallSessionKey},
 		},
 	}
 
@@ -114,7 +122,8 @@ func TestListAlertByInstallSession(t *testing.T) {
 		assert.Nil(t, err)
 
 		for _, alert := range resp.GetAlerts() {
-			assert.Equal(t, "00000125d02544fffefdff11", alert.Devid)
+			assert.Equal(t, device.Devid, alert.Devid)
+			assert.Equal(t, device.InstallSessionKey, alert.InstallSessionKey)
 			assert.Equal(t, "0bee7b43-0b57-4b54-9062-430e2bd3fa79", alert.GetAlarmGroup().GetGroupid())
 		}
 	}
