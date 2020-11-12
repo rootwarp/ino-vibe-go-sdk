@@ -39,7 +39,6 @@ func TestGroupList(t *testing.T) {
 	groupIDs := map[string]bool{}
 	for _, g := range groups {
 		groupIDs[g.ID] = true
-		assert.Nil(t, g.Parent)
 	}
 
 	for _, rootID := range partialRootGroups {
@@ -50,25 +49,38 @@ func TestGroupList(t *testing.T) {
 func TestGroupListForSelected(t *testing.T) {
 	/*
 		이노온 contains
-		이노온 - 개발
 		이노온 - 운영
+		이노온 - 개발
+		이노온 - 개발 - 서버
+		이노온 - 개발 - 앱
 	*/
 
 	cli, _ := NewClient()
 	ctx := context.Background()
 
-	groups, _ := cli.List(ctx, "0bee7b43-0b57-4b54-9062-430e2bd3fa79")
+	groups, err := cli.List(ctx, "0bee7b43-0b57-4b54-9062-430e2bd3fa79")
+	assert.Nil(t, err)
 
-	assert.Equal(t, 1, len(groups))
-	assert.Equal(t, "0bee7b43-0b57-4b54-9062-430e2bd3fa79", groups[0].ID)
-
-	childrenIDs := make([]string, len(groups[0].Children))
-	for i, children := range groups[0].Children {
-		childrenIDs[i] = children.ID
+	groupMap := map[string]Group{}
+	for _, g := range flatten(groups) {
+		groupMap[g.ID] = g
 	}
 
-	assert.Contains(t, childrenIDs, "607f9db4-7eee-4a08-894d-356c8a462ae1")
-	assert.Contains(t, childrenIDs, "b09a8694-6ccb-4cb7-9ffa-57681869f54d")
+	assert.Contains(t, groupMap, "607f9db4-7eee-4a08-894d-356c8a462ae1")
+	assert.Contains(t, groupMap, "b09a8694-6ccb-4cb7-9ffa-57681869f54d")
+	assert.Contains(t, groupMap, "74fc3dda-c4d4-4589-bd9c-858c3d178d83")
+	assert.Contains(t, groupMap, "b21ad180-c3f4-450a-9aed-125177d78f98")
+}
+
+func flatten(groups []Group) []Group {
+	retGroups := []Group{}
+
+	for _, g := range groups {
+		retGroups = append(retGroups, g)
+		retGroups = append(retGroups, flatten(g.Children)...)
+	}
+
+	return retGroups
 }
 
 func TestGroupGetName(t *testing.T) {

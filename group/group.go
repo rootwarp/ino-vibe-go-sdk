@@ -18,11 +18,13 @@ import (
 	"github.com/rootwarp/ino-vibe-go-sdk/user"
 )
 
-var (
-	serverURL = "grpc.ino-vibe.ino-on.dev:443"
+const (
+	permitGroupTreeDepth = 10
 )
 
 var (
+	serverURL = "grpc.ino-vibe.ino-on.dev:443"
+
 	// ErrGroupNonExist describes requested group is not exist on system.
 	ErrGroupNonExist = errors.New("Group does not exist")
 )
@@ -31,8 +33,14 @@ var (
 type Group struct {
 	ID       string  `json:"id"`
 	Name     string  `json:"name"`
-	Parent   *Group  `json:"parent"`
 	Children []Group `json:"children"`
+}
+
+type groupNode struct {
+	ID       string
+	Name     string
+	Parent   *groupNode
+	Children []*groupNode
 }
 
 // Client is client for Group.
@@ -78,13 +86,13 @@ func (c *client) List(ctx context.Context, groupID string) ([]Group, error) {
 	cli := c.getGroupClient()
 
 	listCli, err := cli.List(ctx, &pb.GroupRequest{Groupid: groupID})
-	fmt.Println(err)
 	if err != nil {
 		return []Group{}, nil
 	}
 
 	pbGroups := map[string]*pb.Group{}
-	groups := map[string]*Group{}
+	groupNodes := map[string]*groupNode{}
+	rootNodes := make([]*groupNode, 0)
 
 	for {
 		group, err := listCli.Recv()
@@ -92,36 +100,55 @@ func (c *client) List(ctx context.Context, groupID string) ([]Group, error) {
 			if err == io.EOF {
 				break
 			} else {
-				fmt.Println(err)
 				return []Group{}, err
 			}
 		}
 
 		pbGroups[group.Groupid] = group
-		groups[group.Groupid] = &Group{ID: group.Groupid, Name: group.Name, Parent: nil, Children: []Group{}}
-	}
+		groupNodes[group.Groupid] = &groupNode{ID: group.Groupid, Name: group.Name, Children: []*groupNode{}}
 
-	rootGroups := make([]*Group, 0)
-
-	for id, g := range pbGroups {
-		curGroup := groups[id]
-		if parent, ok := groups[g.ParentId]; ok {
-			curGroup.Parent = parent
-			parent.Children = append(parent.Children, *curGroup)
-		} else {
-			rootGroups = append(rootGroups, curGroup)
+		if group.ParentId == "" {
+			rootNodes = append(rootNodes, groupNodes[group.Groupid])
 		}
 	}
 
-	respGroups := make([]Group, len(rootGroups))
-
-	i := 0
-	for _, g := range rootGroups {
-		respGroups[i] = *g
-		i++
+	for _, g := range pbGroups {
+		if parent, ok := groupNodes[g.ParentId]; ok {
+			parent.Children = append(parent.Children, groupNodes[g.Groupid])
+		}
 	}
 
-	return respGroups, nil
+	return c.traverse(rootNodes, 0), nil
+}
+
+func (c *client) printTree(roots []*groupNode, depth int) {
+	if depth > permitGroupTreeDepth {
+		return
+	}
+
+	for _, g := range roots {
+		for i := 0; i < depth; i++ {
+			fmt.Printf("-")
+		}
+
+		fmt.Println(g.Name)
+		c.printTree(g.Children, depth+1)
+	}
+}
+
+func (c *client) traverse(roots []*groupNode, depth int) []Group {
+	if depth > permitGroupTreeDepth {
+		return []Group{}
+	}
+
+	retGroups := make([]Group, len(roots))
+	for i, g := range roots {
+		retGroups[i] = Group{ID: g.ID, Name: g.Name}
+		retGroups[i].Children = c.traverse(g.Children, depth+1)
+
+	}
+
+	return retGroups
 }
 
 // GetName returns group's name.
