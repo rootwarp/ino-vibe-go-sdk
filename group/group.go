@@ -106,9 +106,12 @@ func (c *client) List(ctx context.Context, groupID string) ([]Group, error) {
 
 		pbGroups[group.Groupid] = group
 		groupNodes[group.Groupid] = &groupNode{ID: group.Groupid, Name: group.Name, Children: []*groupNode{}}
+	}
 
-		if group.ParentId == "" {
-			rootNodes = append(rootNodes, groupNodes[group.Groupid])
+	// Find current root
+	for k, g := range pbGroups {
+		if _, ok := pbGroups[g.ParentId]; !ok {
+			rootNodes = append(rootNodes, groupNodes[k])
 		}
 	}
 

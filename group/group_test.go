@@ -58,18 +58,42 @@ func TestGroupListForSelected(t *testing.T) {
 	cli, _ := NewClient()
 	ctx := context.Background()
 
-	groups, err := cli.List(ctx, "0bee7b43-0b57-4b54-9062-430e2bd3fa79")
-	assert.Nil(t, err)
-
-	groupMap := map[string]Group{}
-	for _, g := range flatten(groups) {
-		groupMap[g.ID] = g
+	tests := []struct {
+		GroupID         string
+		ContainGroupIDs []string
+	}{
+		{
+			GroupID: "0bee7b43-0b57-4b54-9062-430e2bd3fa79",
+			ContainGroupIDs: []string{
+				"0bee7b43-0b57-4b54-9062-430e2bd3fa79",
+				"607f9db4-7eee-4a08-894d-356c8a462ae1",
+				"b09a8694-6ccb-4cb7-9ffa-57681869f54d",
+				"74fc3dda-c4d4-4589-bd9c-858c3d178d83",
+				"b21ad180-c3f4-450a-9aed-125177d78f98",
+			},
+		},
+		{
+			GroupID: "74fc3dda-c4d4-4589-bd9c-858c3d178d83",
+			ContainGroupIDs: []string{
+				"74fc3dda-c4d4-4589-bd9c-858c3d178d83",
+			},
+		},
 	}
 
-	assert.Contains(t, groupMap, "607f9db4-7eee-4a08-894d-356c8a462ae1")
-	assert.Contains(t, groupMap, "b09a8694-6ccb-4cb7-9ffa-57681869f54d")
-	assert.Contains(t, groupMap, "74fc3dda-c4d4-4589-bd9c-858c3d178d83")
-	assert.Contains(t, groupMap, "b21ad180-c3f4-450a-9aed-125177d78f98")
+	for _, test := range tests {
+		groups, err := cli.List(ctx, test.GroupID)
+		assert.Nil(t, err)
+
+		groupMap := map[string]Group{}
+		for _, g := range flatten(groups) {
+			groupMap[g.ID] = g
+		}
+
+		for _, id := range test.ContainGroupIDs {
+			assert.Contains(t, groupMap, id)
+		}
+	}
+
 }
 
 func flatten(groups []Group) []Group {
