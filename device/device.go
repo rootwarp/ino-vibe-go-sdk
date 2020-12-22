@@ -29,6 +29,7 @@ type Client interface {
 	UpdateConfig(context.Context, *pb.DeviceConfigUpdateRequest) (*pb.DeviceResponse, error)
 
 	StatusLog(context.Context, *pb.StatusLogRequest) (*pb.StatusLogResponse, error)
+	StoreStatusLog(context.Context, *pb.AddStatusLogRequest) (*pb.AddStatusLogResponse, error)
 
 	PrepareInstall(context.Context, *pb.PrepareInstallRequest) (*pb.PrepareInstallResponse, error)
 	CompleteInstall(context.Context, *pb.CompleteInstallRequest) (*pb.CompleteInstallResponse, error)
@@ -110,6 +111,11 @@ func (c *client) UpdateConfig(ctx context.Context, req *pb.DeviceConfigUpdateReq
 func (c *client) StatusLog(ctx context.Context, req *pb.StatusLogRequest) (*pb.StatusLogResponse, error) {
 	cli := c.getDeviceClient()
 	return cli.StatusLog(ctx, req)
+}
+
+func (c *client) StoreStatusLog(ctx context.Context, req *pb.AddStatusLogRequest) (*pb.AddStatusLogResponse, error) {
+	cli := c.getDeviceClient()
+	return cli.StoreStatusLog(ctx, req)
 }
 
 func (c *client) PrepareInstall(ctx context.Context, in *pb.PrepareInstallRequest) (*pb.PrepareInstallResponse, error) {
