@@ -246,19 +246,48 @@ func TestStatusLogDefaultParam(t *testing.T) {
 }
 
 func TestStatusLogValidParam(t *testing.T) {
-	testDevid := "000000030000000000000001"
+	const testDevid = "000000030000000000000001"
+	const insertCount = 3
+
 	ctx := context.Background()
 	cli, _ := NewClient()
 
-	current := time.Now()
+	timeStart := time.Now().Add(-1 * time.Second)
 
-	timeStart := current.Add(-(time.Hour * 24 * 10))
-	timeEnd := current.Add(-(time.Hour * 24 * 5))
+	fixtureStatusLogs := make([]*pb.StatusLog, insertCount)
+
+	for i := 0; i < insertCount; i++ {
+		current := time.Now()
+		req := &pb.AddStatusLogRequest{
+			Devid: testDevid,
+			Log: &pb.StatusLog{
+				Time:        &timestamp.Timestamp{Seconds: current.Unix()},
+				Battery:     float32(i),
+				Temperature: float32(i),
+				Rssi:        -int32(i),
+				MgX:         float32(i),
+				MgY:         float32(i),
+				MgZ:         float32(i),
+				AngleZ:      float32(i),
+				Raw:         fmt.Sprintf("raw_%d", i),
+			},
+		}
+		storeResp, err := cli.StoreStatusLog(ctx, req)
+
+		fixtureStatusLogs[i] = req.Log
+
+		assert.Nil(t, err)
+		assert.Equal(t, pb.ResponseCode_SUCCESS, storeResp.ResponseCode)
+
+		time.Sleep(1 * time.Second)
+	}
+
+	timeEnd := time.Now().Add(1 * time.Second)
 
 	req := &pb.StatusLogRequest{
 		Devid:     testDevid,
-		PageNo:    1,
-		PageSize:  5,
+		PageNo:    0,
+		PageSize:  insertCount,
 		TimeStart: &timestamp.Timestamp{Seconds: timeStart.Unix()},
 		TimeEnd:   &timestamp.Timestamp{Seconds: timeEnd.Unix()},
 	}
@@ -272,9 +301,19 @@ func TestStatusLogValidParam(t *testing.T) {
 	assert.Equal(t, resp.TimeStart.Seconds, timeStart.Unix())
 	assert.Equal(t, resp.TimeEnd.Seconds, timeEnd.Unix())
 
-	for _, log := range resp.Logs {
+	// Last entity can be delayed. Omit that.
+	for i, log := range resp.Logs[:insertCount-1] {
 		assert.True(t, log.Time.Seconds >= timeStart.Unix())
 		assert.True(t, log.Time.Seconds <= timeEnd.Unix())
+
+		assert.Equal(t, fixtureStatusLogs[i].Battery, log.Battery)
+		assert.Equal(t, fixtureStatusLogs[i].Temperature, log.Temperature)
+		assert.Equal(t, fixtureStatusLogs[i].Rssi, log.Rssi)
+		assert.Equal(t, fixtureStatusLogs[i].MgX, log.MgX)
+		assert.Equal(t, fixtureStatusLogs[i].MgY, log.MgY)
+		assert.Equal(t, fixtureStatusLogs[i].MgZ, log.MgZ)
+		assert.Equal(t, fixtureStatusLogs[i].AngleZ, log.AngleZ)
+		assert.Equal(t, fixtureStatusLogs[i].Raw, log.Raw)
 	}
 }
 
