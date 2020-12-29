@@ -214,106 +214,116 @@ func TestUpdateDeviceConfig(t *testing.T) {
 	}
 }
 
-func TestStatusLogDefaultParam(t *testing.T) {
-	testDevid := "000000030000000000000001"
-	defaultPageSize := 100
+func TestGetStatusLog(t *testing.T) {
+	tests := []struct {
+		Desc       string
+		DevID      string
+		InstallKey string
+		ExpectErr  error
+	}{
+		{
+			Desc:       "Successful",
+			DevID:      "customer_test_n",
+			InstallKey: "d51a5d903d75786a9ea80f4f6d7ce58034feddc6562960cad791b464af419107",
+			ExpectErr:  nil,
+		},
+		{
+			Desc:       "Non-exist device.",
+			DevID:      "non-exist-device",
+			InstallKey: "d51a5d903d75786a9ea80f4f6d7ce58034feddc6562960cad791b464af419107",
+			ExpectErr:  ErrNonExistDevice,
+		},
+		{
+			Desc:       "Non-exist install key",
+			DevID:      "customer_test_n",
+			InstallKey: "dummy",
+			ExpectErr:  ErrNoEntities,
+		},
+	}
 
 	ctx := context.Background()
 	cli, _ := NewClient()
 
-	req := &pb.StatusLogRequest{
-		Devid: testDevid,
-	}
+	timeTo := time.Now()
+	timeFrom := timeTo.AddDate(0, -1, 0)
 
-	current := time.Now()
-	resp, err := cli.StatusLog(ctx, req)
+	for _, test := range tests {
+		logs, err := cli.StatusLog(ctx, test.DevID, test.InstallKey, timeFrom, timeTo, 0, 100)
 
-	fmt.Printf("%+v\n", err)
+		if test.ExpectErr != nil {
+			assert.Equal(t, test.ExpectErr, err)
+			continue
+		}
 
-	assert.Nil(t, err)
-	assert.Equal(t, testDevid, resp.Devid)
-	assert.Equal(t, uint32(0), resp.PageNo)
-	assert.Equal(t, uint32(defaultPageSize), resp.PageSize)
-	assert.InDelta(t, resp.TimeStart.Seconds, current.Unix()-(3600*24*7), 5)
-	assert.InDelta(t, resp.TimeEnd.Seconds, current.Unix(), 5)
-
-	assert.True(t, len(resp.Logs) <= defaultPageSize)
-	if len(resp.Logs) == defaultPageSize {
-		assert.True(t, resp.HasNext)
-	} else {
-		assert.False(t, resp.HasNext)
+		assert.True(t, len(logs) < 100)
+		for _, log := range logs {
+			assert.Equal(t, test.DevID, log.Devid)
+			assert.Equal(t, test.InstallKey, log.InstallSessionKey)
+			assert.True(t, log.Time.After(timeFrom))
+			assert.True(t, log.Time.Before(timeTo))
+		}
 	}
 }
 
-func TestStatusLogValidParam(t *testing.T) {
-	const testDevid = "000000030000000000000001"
-	const insertCount = 3
+func TestStoreStatusLog(t *testing.T) {
+	tests := []struct {
+		Desc        string
+		DevID       string
+		Battery     int
+		Temperature int
+		RSSI        int
+		ExpectErr   error
+	}{
+		{
+			DevID:       "customer_test_n",
+			Battery:     100,
+			Temperature: 20,
+			RSSI:        -120,
+			ExpectErr:   nil,
+		},
+		{
+			DevID:       "non-exist-device",
+			Battery:     10,
+			Temperature: -10,
+			RSSI:        -100,
+			ExpectErr:   ErrNonExistDevice,
+		},
+		{
+			DevID:       "000000030000000000000001",
+			Battery:     40,
+			Temperature: 2,
+			RSSI:        -80,
+			ExpectErr:   ErrForbiddenInstallStatus,
+		},
+	}
 
 	ctx := context.Background()
 	cli, _ := NewClient()
 
-	timeStart := time.Now().Add(-1 * time.Second)
+	for _, test := range tests {
+		err := cli.StoreStatusLog(ctx, test.DevID, test.Battery, test.Temperature, test.RSSI)
 
-	fixtureStatusLogs := make([]*pb.StatusLog, insertCount)
-
-	for i := 0; i < insertCount; i++ {
-		current := time.Now()
-		req := &pb.AddStatusLogRequest{
-			Devid: testDevid,
-			Log: &pb.StatusLog{
-				Time:        &timestamp.Timestamp{Seconds: current.Unix()},
-				Battery:     float32(i),
-				Temperature: float32(i),
-				Rssi:        -int32(i),
-				MgX:         float32(i),
-				MgY:         float32(i),
-				MgZ:         float32(i),
-				AngleZ:      float32(i),
-				Raw:         fmt.Sprintf("raw_%d", i),
-			},
+		if test.ExpectErr != nil {
+			assert.Equal(t, test.ExpectErr, err)
+			continue
 		}
-		storeResp, err := cli.StoreStatusLog(ctx, req)
 
-		fixtureStatusLogs[i] = req.Log
+		time.Sleep(time.Second)
 
-		assert.Nil(t, err)
-		assert.Equal(t, pb.ResponseCode_SUCCESS, storeResp.ResponseCode)
+		devResp, _ := cli.Detail(ctx, test.DevID)
+		device := devResp.Devices[0]
 
-		time.Sleep(1 * time.Second)
-	}
+		installKey := device.InstallSessionKey
 
-	timeEnd := time.Now().Add(1 * time.Second)
+		current := time.Now()
 
-	req := &pb.StatusLogRequest{
-		Devid:     testDevid,
-		PageNo:    0,
-		PageSize:  insertCount,
-		TimeStart: &timestamp.Timestamp{Seconds: timeStart.Unix()},
-		TimeEnd:   &timestamp.Timestamp{Seconds: timeEnd.Unix()},
-	}
+		logs, err := cli.StatusLog(ctx, test.DevID, installKey, current.Add(-time.Second*60), current, 0, 1)
 
-	resp, err := cli.StatusLog(ctx, req)
-
-	assert.Nil(t, err)
-	assert.Equal(t, testDevid, resp.Devid)
-	assert.Equal(t, req.PageNo, resp.PageNo)
-	assert.Equal(t, req.PageSize, resp.PageSize)
-	assert.Equal(t, resp.TimeStart.Seconds, timeStart.Unix())
-	assert.Equal(t, resp.TimeEnd.Seconds, timeEnd.Unix())
-
-	// Last entity can be delayed. Omit that.
-	for i, log := range resp.Logs[:insertCount-1] {
-		assert.True(t, log.Time.Seconds >= timeStart.Unix())
-		assert.True(t, log.Time.Seconds <= timeEnd.Unix())
-
-		assert.Equal(t, fixtureStatusLogs[i].Battery, log.Battery)
-		assert.Equal(t, fixtureStatusLogs[i].Temperature, log.Temperature)
-		assert.Equal(t, fixtureStatusLogs[i].Rssi, log.Rssi)
-		assert.Equal(t, fixtureStatusLogs[i].MgX, log.MgX)
-		assert.Equal(t, fixtureStatusLogs[i].MgY, log.MgY)
-		assert.Equal(t, fixtureStatusLogs[i].MgZ, log.MgZ)
-		assert.Equal(t, fixtureStatusLogs[i].AngleZ, log.AngleZ)
-		assert.Equal(t, fixtureStatusLogs[i].Raw, log.Raw)
+		assert.Equal(t, test.DevID, logs[0].Devid)
+		assert.InDelta(t, current.Unix(), logs[0].Time.Unix(), 5)
+		assert.Equal(t, test.Battery, logs[0].Battery)
+		assert.Equal(t, test.Temperature, logs[0].Temperature)
+		assert.Equal(t, test.RSSI, logs[0].RSSI)
 	}
 }
 
@@ -608,4 +618,110 @@ func TestDiscardOnOtherStatus(t *testing.T) {
 		Devid:         testDevid,
 		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
 	})
+}
+
+func TestLastInclinationLog(t *testing.T) {
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	tests := []struct {
+		Desc      string
+		DevID     string
+		ExpectErr error
+	}{
+		{
+			Desc:      "Successful",
+			DevID:     "customer_test_n",
+			ExpectErr: nil,
+		},
+		{
+			Desc:      "Non exist device",
+			DevID:     "non-exist-device",
+			ExpectErr: ErrNonExistDevice,
+		},
+		{
+			Desc:      "No inclinations",
+			DevID:     "000000030000000000000001",
+			ExpectErr: ErrNoEntities,
+		},
+	}
+
+	for _, test := range tests {
+		log, err := cli.LastInclinationLog(ctx, test.DevID)
+
+		assert.Equal(t, test.ExpectErr, err)
+		fmt.Println(log, err)
+
+		if err == nil {
+			resp, _ := cli.Detail(ctx, test.DevID)
+			dev := resp.Devices[0]
+
+			assert.Equal(t, test.DevID, log.Devid)
+			assert.Equal(t, dev.InstallSessionKey, log.InstallSessionKey)
+		}
+	}
+}
+
+func TestStoreInclination(t *testing.T) {
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	tests := []struct {
+		Desc      string
+		DevID     string
+		RawX      int
+		RawY      int
+		RawZ      int
+		ExpectErr error
+	}{
+		{
+			Desc:      "Acc. values are wrong.",
+			DevID:     "customer_test_n",
+			RawX:      0,
+			RawY:      0,
+			RawZ:      0,
+			ExpectErr: ErrInvalidInclinationValue,
+		},
+		{
+			Desc:      "Successful",
+			DevID:     "customer_test_n",
+			RawX:      0,
+			RawY:      0,
+			RawZ:      998.0,
+			ExpectErr: nil,
+		},
+		{
+			Desc:      "Store request on non-exist device",
+			DevID:     "non-exist-device",
+			RawX:      0,
+			RawY:      0,
+			RawZ:      998.0,
+			ExpectErr: ErrNonExistDevice,
+		},
+		{
+			Desc:      "Store request on not installed device",
+			DevID:     "000000030000000000000001",
+			RawX:      0,
+			RawY:      0,
+			RawZ:      998.0,
+			ExpectErr: ErrForbiddenInstallStatus,
+		},
+	}
+
+	for _, test := range tests {
+		err := cli.StoreInclinationLog(ctx, test.DevID, test.RawX, test.RawY, test.RawZ)
+
+		assert.Equal(t, test.ExpectErr, err)
+
+		if err == nil {
+			// Check values.
+			log, err := cli.LastInclinationLog(ctx, test.DevID)
+
+			assert.Nil(t, err)
+			assert.Equal(t, test.DevID, log.Devid)
+			assert.Equal(t, float64(test.RawX)*0.244, log.AccXMg)
+			assert.Equal(t, float64(test.RawY)*0.244, log.AccYMg)
+			assert.Equal(t, float64(test.RawZ)*0.244, log.AccZMg)
+		}
+	}
 }
