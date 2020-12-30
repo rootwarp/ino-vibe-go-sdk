@@ -709,7 +709,7 @@ func TestStoreInclination(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := cli.StoreInclinationLog(ctx, test.DevID, test.RawX, test.RawY, test.RawZ)
+		_, err := cli.StoreInclinationLog(ctx, test.DevID, test.RawX, test.RawY, test.RawZ)
 
 		assert.Equal(t, test.ExpectErr, err)
 

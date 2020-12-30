@@ -51,7 +51,7 @@ type Client interface {
 	StoreStatusLog(ctx context.Context, devid string, battery, temperature, RSSI int) error
 
 	LastInclinationLog(context.Context, string) (*InclinationLog, error)
-	StoreInclinationLog(context.Context, string, int, int, int) error
+	StoreInclinationLog(context.Context, string, int, int, int) (float64, error)
 
 	PrepareInstall(context.Context, *pb.PrepareInstallRequest) (*pb.PrepareInstallResponse, error)
 	CompleteInstall(context.Context, *pb.CompleteInstallRequest) (*pb.CompleteInstallResponse, error)
@@ -288,18 +288,19 @@ func (c *client) LastInclinationLog(ctx context.Context, devid string) (*Inclina
 }
 
 // StoreInclinationLog creates new inclination log.
+// Return calculated angle in degree unit.
 //
 // ErrNonExistDevice returns if requested device is not exist.
 // ErrForbiddenInstallStatus returns if requested device is not installed.
 // ErrInvalidInclinationValue returns if calculated angle is NaN or Inf.
-func (c *client) StoreInclinationLog(ctx context.Context, devid string, rawX, rawY, rawZ int) error {
+func (c *client) StoreInclinationLog(ctx context.Context, devid string, rawX, rawY, rawZ int) (float64, error) {
 	device, err := c.getDevice(ctx, devid)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if device.InstallStatus != pb.InstallStatus_Installed {
-		return ErrForbiddenInstallStatus
+		return 0, ErrForbiddenInstallStatus
 	}
 
 	var unit float64
@@ -313,7 +314,7 @@ func (c *client) StoreInclinationLog(ctx context.Context, devid string, rawX, ra
 	angleZ := angle(x, y, z, unit)
 
 	if math.IsNaN(angleZ) || math.IsInf(angleZ, 0) {
-		return ErrInvalidInclinationValue
+		return 0, ErrInvalidInclinationValue
 	}
 
 	newLog := InclinationLog{
@@ -330,7 +331,7 @@ func (c *client) StoreInclinationLog(ctx context.Context, devid string, rawX, ra
 	newKey := datastore.IncompleteKey(inclinationKind, nil)
 	_, err = dsCli.Put(ctx, newKey, &newLog)
 
-	return err
+	return angleZ, err
 }
 
 func angle(x, y, z, unit float64) float64 {
