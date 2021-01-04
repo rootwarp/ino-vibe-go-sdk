@@ -255,7 +255,7 @@ func TestGetStatusLog(t *testing.T) {
 			continue
 		}
 
-		assert.True(t, len(logs) < 100)
+		assert.True(t, len(logs) <= 100)
 		for _, log := range logs {
 			assert.Equal(t, test.DevID, log.Devid)
 			assert.Equal(t, test.InstallKey, log.InstallSessionKey)
@@ -724,4 +724,47 @@ func TestStoreInclination(t *testing.T) {
 			assert.Equal(t, float64(test.RawZ)*0.244, log.AccZMg)
 		}
 	}
+}
+
+func TestAngle(t *testing.T) {
+	tests := []struct {
+		X float64
+		Y float64
+		Z float64
+	}{
+		{
+			X: 0.0,
+			Y: 0.0,
+			Z: 998.0,
+		},
+
+		{
+			X: 993.812,
+			Y: -13.908,
+			Z: -1.22,
+		},
+
+		{
+			X: 993.812,
+			Y: -13.908,
+			Z: 1.22,
+		},
+
+		{
+			X: 13.908,
+			Y: 993.812,
+			Z: 1.22,
+		},
+		{
+			X: -13.908,
+			Y: 993.812,
+			Z: 1.22,
+		},
+	}
+
+	for i, test := range tests {
+		angleZ := angle(test.X, test.Y, test.Z, 1)
+		fmt.Println("Angle", i, angleZ)
+	}
+
 }

@@ -335,7 +335,7 @@ func (c *client) StoreInclinationLog(ctx context.Context, devid string, rawX, ra
 }
 
 func angle(x, y, z, unit float64) float64 {
-	t := math.Sqrt(math.Pow(x, 2)+math.Pow(y, 2)) / z
+	t := z / math.Sqrt(math.Pow(x, 2)+math.Pow(y, 2))
 	rad := math.Atan(t)
 	return rad * (180 / math.Pi)
 }
