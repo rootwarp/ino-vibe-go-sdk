@@ -181,6 +181,8 @@ func TestUpdateDeviceConfig(t *testing.T) {
 			RecogParam_0:      &pb.DeviceConfigUpdateRequest_RecogParam_0Value{RecogParam_0Value: 12.0},
 			RecogParam_1:      &pb.DeviceConfigUpdateRequest_RecogParam_1Value{RecogParam_1Value: 0.6},
 			RecogParam_2:      &pb.DeviceConfigUpdateRequest_RecogParam_2Value{RecogParam_2Value: 8.0},
+			MuteDate: &pb.DeviceConfigUpdateRequest_MuteDateValue{
+				MuteDateValue: &timestamp.Timestamp{Seconds: time.Now().Unix()}},
 		},
 		{
 			Devid:             testDevid,
@@ -193,6 +195,7 @@ func TestUpdateDeviceConfig(t *testing.T) {
 			RecogParam_0:      &pb.DeviceConfigUpdateRequest_RecogParam_0Value{RecogParam_0Value: 10.0},
 			RecogParam_1:      &pb.DeviceConfigUpdateRequest_RecogParam_1Value{RecogParam_1Value: 0.3},
 			RecogParam_2:      &pb.DeviceConfigUpdateRequest_RecogParam_2Value{RecogParam_2Value: 6.0},
+			MuteDate:          &pb.DeviceConfigUpdateRequest_MuteDateValue{MuteDateValue: nil},
 		},
 	}
 
@@ -211,6 +214,15 @@ func TestUpdateDeviceConfig(t *testing.T) {
 		assert.Equal(t, req.GetRecogParam_0Value(), resp.Devices[0].RecogParam_0)
 		assert.Equal(t, req.GetRecogParam_1Value(), resp.Devices[0].RecogParam_1)
 		assert.Equal(t, req.GetRecogParam_2Value(), resp.Devices[0].RecogParam_2)
+
+		devResp, _ := cli.Detail(ctx, testDevid)
+		dev := devResp.Devices[0]
+
+		if req.GetMuteDateValue() != nil {
+			assert.Equal(t, req.GetMuteDateValue().Seconds, dev.MuteDate.Seconds)
+		} else {
+			assert.Nil(t, dev.GetMuteDate())
+		}
 	}
 }
 
