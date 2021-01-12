@@ -215,10 +215,13 @@ func TestUpdateDeviceConfig(t *testing.T) {
 		assert.Equal(t, req.GetRecogParam_1Value(), resp.Devices[0].RecogParam_1)
 		assert.Equal(t, req.GetRecogParam_2Value(), resp.Devices[0].RecogParam_2)
 
-		if req.MuteDate != nil {
-			fmt.Println("MuteDate", req.GetMuteDateValue(), resp.Devices[0].MuteDate)
-			// TODO:
-			// assert.Equal(t, req.GetMuteDateValue().AsTime().Unix(), resp.Devices[0].MuteDate.AsTime().Unix())
+		devResp, _ := cli.Detail(ctx, testDevid)
+		dev := devResp.Devices[0]
+
+		if req.GetMuteDateValue() != nil {
+			assert.Equal(t, req.GetMuteDateValue().Seconds, dev.MuteDate.Seconds)
+		} else {
+			assert.Nil(t, dev.GetMuteDate())
 		}
 	}
 }
