@@ -152,7 +152,6 @@ func (c *client) UpdateConfig(ctx context.Context, req *pb.DeviceConfigUpdateReq
 
 // StatusLog returns slice of status log of selected device within time range.
 // ErrNonExistDevice
-// ErrNoEntities
 // ErrInvalidParameter
 func (c *client) StatusLog(ctx context.Context, devid, installSession string, timeFrom, timeTo time.Time, offset, limit int) ([]StatusLog, error) {
 	if timeFrom.After(timeTo) {
@@ -173,6 +172,8 @@ func (c *client) StatusLog(ctx context.Context, devid, installSession string, ti
 	q := datastore.NewQuery(statusLogKind).
 		Filter("Devid =", devid).
 		Filter("InstallSessionKey =", installSession).
+		Filter("Time >=", timeFrom).
+		Filter("Time <=", timeTo).
 		Order("-Time").
 		Offset(offset).
 		Limit(limit)
@@ -197,10 +198,6 @@ func (c *client) StatusLog(ctx context.Context, devid, installSession string, ti
 
 		logs = append(logs, newLog)
 		idx++
-	}
-
-	if idx == 0 {
-		return logs, ErrNoEntities
 	}
 
 	return logs, nil
