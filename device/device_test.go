@@ -32,16 +32,24 @@ func TestGetDeviceListUnauthorized(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestGetDeviceListInstallStatus(t *testing.T) {
+func TestGetDeviceList(t *testing.T) {
+	tests := []pb.InstallStatus{
+		pb.InstallStatus_Installed,
+		pb.InstallStatus_Uninstalling,
+	}
+
 	ctx := context.Background()
 	cli, _ := NewClient()
-	resp, err := cli.List(ctx, pb.InstallStatus_Installed)
 
-	assert.Nil(t, err)
-	assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
+	for _, installStatus := range tests {
+		resp, err := cli.List(ctx, installStatus)
 
-	for _, device := range resp.Devices {
-		assert.Equal(t, pb.InstallStatus_Installed, device.InstallStatus)
+		assert.Nil(t, err)
+		assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
+
+		for _, device := range resp.Devices {
+			assert.Equal(t, installStatus, device.InstallStatus)
+		}
 	}
 }
 
