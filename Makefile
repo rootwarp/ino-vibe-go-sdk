@@ -4,5 +4,8 @@ test_feature:
 test_dev:
 	@TEST_TARGET=dev go test -count=1 ./device ./user ./group ./wave ./alert ./thingplug ./parser
 
+test_stage:
+	@TEST_TARGET=stage go test -count=1 ./device ./user ./group ./wave ./alert ./thingplug ./parser
+
 test:
 	@go test -count=1 ./device ./user ./group ./wave ./alert ./thingplug ./parser

@@ -249,7 +249,7 @@ func TestGetStatusLog(t *testing.T) {
 			Desc:       "Non-exist install key",
 			DevID:      "customer_test_n",
 			InstallKey: "dummy",
-			ExpectErr:  ErrNoEntities,
+			ExpectErr:  nil,
 		},
 	}
 
@@ -257,7 +257,7 @@ func TestGetStatusLog(t *testing.T) {
 	cli, _ := NewClient()
 
 	timeTo := time.Now()
-	timeFrom := timeTo.AddDate(0, -1, 0)
+	timeFrom := timeTo.AddDate(0, 0, -7)
 
 	for _, test := range tests {
 		logs, err := cli.StatusLog(ctx, test.DevID, test.InstallKey, timeFrom, timeTo, 0, 100)
