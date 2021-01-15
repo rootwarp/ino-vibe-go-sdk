@@ -398,6 +398,22 @@ func TestInstall(t *testing.T) {
 	// Force change to WaitCompleteInstall status.
 	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 
+	// Change status for rest testing.
+	_, err = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:       testDevid,
+		AlarmStatus: &pb.DeviceStatusUpdateRequest_IsAlarmedValue{IsAlarmedValue: true},
+		AlarmDate: &pb.DeviceStatusUpdateRequest_AlarmDateValue{
+			AlarmDateValue: &timestamp.Timestamp{Seconds: current.Unix()},
+		},
+	})
+
+	_, err = cli.UpdateConfig(ctx, &pb.DeviceConfigUpdateRequest{
+		Devid: testDevid,
+		MuteDate: &pb.DeviceConfigUpdateRequest_MuteDateValue{
+			MuteDateValue: &timestamp.Timestamp{Seconds: current.Unix()},
+		},
+	})
+
 	// Second Test CompleteInstall
 	completeResp, err := cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{
 		Devid:             testDevid,
@@ -413,6 +429,9 @@ func TestInstall(t *testing.T) {
 	assert.Equal(t, testDevid, device.Devid)
 	assert.Equal(t, pb.InstallStatus_Installed, device.InstallStatus)
 	assert.Equal(t, resp.InstallSessionKey, device.InstallSessionKey)
+	assert.False(t, device.IsAlarmed)
+	assert.Nil(t, device.AlarmDate)
+	assert.Nil(t, device.MuteDate)
 
 	// Clear
 	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
