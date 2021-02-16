@@ -101,3 +101,16 @@ func TestWaveDetailNonExist(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, pb.ResponseCode_NON_EXIST, resp.ResponseCode)
 }
+
+func TestWaveList(t *testing.T) {
+	testDevID := "00000125d02544fffefe108a"
+	c, _ := NewClient()
+	ctx := context.Background()
+
+	waves, err := c.List(ctx, testDevID, 0, 10)
+
+	assert.Nil(t, err)
+	for _, w := range waves {
+		assert.Equal(t, testDevID, w.Devid)
+	}
+}

@@ -32,16 +32,24 @@ func TestGetDeviceListUnauthorized(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestGetDeviceListInstallStatus(t *testing.T) {
+func TestGetDeviceList(t *testing.T) {
+	tests := []pb.InstallStatus{
+		pb.InstallStatus_Installed,
+		pb.InstallStatus_Uninstalling,
+	}
+
 	ctx := context.Background()
 	cli, _ := NewClient()
-	resp, err := cli.List(ctx, pb.InstallStatus_Installed)
 
-	assert.Nil(t, err)
-	assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
+	for _, installStatus := range tests {
+		resp, err := cli.List(ctx, installStatus)
 
-	for _, device := range resp.Devices {
-		assert.Equal(t, pb.InstallStatus_Installed, device.InstallStatus)
+		assert.Nil(t, err)
+		assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
+
+		for _, device := range resp.Devices {
+			assert.Equal(t, installStatus, device.InstallStatus)
+		}
 	}
 }
 
@@ -390,6 +398,22 @@ func TestInstall(t *testing.T) {
 	// Force change to WaitCompleteInstall status.
 	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 
+	// Change status for rest testing.
+	_, err = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:       testDevid,
+		AlarmStatus: &pb.DeviceStatusUpdateRequest_IsAlarmedValue{IsAlarmedValue: true},
+		AlarmDate: &pb.DeviceStatusUpdateRequest_AlarmDateValue{
+			AlarmDateValue: &timestamp.Timestamp{Seconds: current.Unix()},
+		},
+	})
+
+	_, err = cli.UpdateConfig(ctx, &pb.DeviceConfigUpdateRequest{
+		Devid: testDevid,
+		MuteDate: &pb.DeviceConfigUpdateRequest_MuteDateValue{
+			MuteDateValue: &timestamp.Timestamp{Seconds: current.Unix()},
+		},
+	})
+
 	// Second Test CompleteInstall
 	completeResp, err := cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{
 		Devid:             testDevid,
@@ -405,6 +429,9 @@ func TestInstall(t *testing.T) {
 	assert.Equal(t, testDevid, device.Devid)
 	assert.Equal(t, pb.InstallStatus_Installed, device.InstallStatus)
 	assert.Equal(t, resp.InstallSessionKey, device.InstallSessionKey)
+	assert.False(t, device.IsAlarmed)
+	assert.Nil(t, device.AlarmDate)
+	assert.Nil(t, device.MuteDate)
 
 	// Clear
 	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
@@ -535,6 +562,49 @@ func TestUninstall(t *testing.T) {
 	resp, _ := cli.PrepareInstall(ctx, prepareReq)
 	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
 	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
+
+	// Test
+	_, err := cli.Uninstall(ctx, &pb.UninstallRequest{Devid: testDevid})
+
+	// Asserts
+	assert.Nil(t, err)
+
+	devResp, _ := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, pb.InstallStatus_Initial, device.InstallStatus)
+	assert.Equal(t, "", device.Alias)
+	assert.Equal(t, float64(0), device.Latitude)
+	assert.Equal(t, float64(0), device.Longitude)
+	assert.Equal(t, "", device.Installer)
+	assert.Nil(t, device.InstallDate)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+}
+
+func TestUninstallOnUninstalling(t *testing.T) {
+	// Prepare
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
+	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
+	_, _ = cli.Uninstalling(ctx, &pb.UninstallingRequest{Devid: testDevid})
 
 	// Test
 	_, err := cli.Uninstall(ctx, &pb.UninstallRequest{Devid: testDevid})

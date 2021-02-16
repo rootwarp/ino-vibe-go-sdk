@@ -3,6 +3,7 @@ package wave
 import (
 	"context"
 	"crypto/x509"
+	"io"
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
 	iv_auth "github.com/rootwarp/ino-vibe-go-sdk/auth"
@@ -17,6 +18,7 @@ var (
 
 // Client provides interfaces.
 type Client interface {
+	List(ctx context.Context, devid string, offset, maxCount int) ([]*pb.WaveDetailItem, error)
 	Detail(ctx context.Context, req *pb.WaveDetailRequest) (*pb.WaveDetailResponse, error)
 	Close()
 }
@@ -24,6 +26,33 @@ type Client interface {
 type client struct {
 	conn       *grpc.ClientConn
 	waveClient pb.WaveServiceClient
+}
+
+func (c *client) List(ctx context.Context, devid string, offset, maxCount int) ([]*pb.WaveDetailItem, error) {
+	cli, err := c.waveClient.List(ctx, &pb.WaveListRequest{
+		Filter:   &pb.WaveListRequest_Devid{Devid: devid},
+		Offset:   uint32(offset),
+		MaxCount: uint32(maxCount),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	waves := make([]*pb.WaveDetailItem, 0)
+
+	for {
+		waveItem, err := cli.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		waves = append(waves, waveItem)
+	}
+
+	return waves, nil
 }
 
 func (c *client) Detail(ctx context.Context, req *pb.WaveDetailRequest) (*pb.WaveDetailResponse, error) {
