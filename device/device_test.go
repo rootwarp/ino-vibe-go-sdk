@@ -586,6 +586,49 @@ func TestUninstall(t *testing.T) {
 	})
 }
 
+func TestUninstallOnUninstalling(t *testing.T) {
+	// Prepare
+	testDevid := "000000030000000000000001"
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	prepareReq := &pb.PrepareInstallRequest{
+		Devid:     testDevid,
+		Alias:     "test-alias",
+		Latitude:  36.1,
+		Longitude: 127.1,
+		Installer: "contact@ino-on.com",
+		GroupId:   "",
+	}
+
+	resp, _ := cli.PrepareInstall(ctx, prepareReq)
+	cli.WaitCompleteInstall(ctx, &pb.WaitCompleteInstallRequest{Devid: testDevid})
+	_, _ = cli.CompleteInstall(ctx, &pb.CompleteInstallRequest{Devid: testDevid, InstallSessionKey: resp.InstallSessionKey})
+	_, _ = cli.Uninstalling(ctx, &pb.UninstallingRequest{Devid: testDevid})
+
+	// Test
+	_, err := cli.Uninstall(ctx, &pb.UninstallRequest{Devid: testDevid})
+
+	// Asserts
+	assert.Nil(t, err)
+
+	devResp, _ := cli.Detail(ctx, testDevid)
+	device := devResp.Devices[0]
+
+	assert.Equal(t, pb.InstallStatus_Initial, device.InstallStatus)
+	assert.Equal(t, "", device.Alias)
+	assert.Equal(t, float64(0), device.Latitude)
+	assert.Equal(t, float64(0), device.Longitude)
+	assert.Equal(t, "", device.Installer)
+	assert.Nil(t, device.InstallDate)
+
+	// Clear
+	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
+		Devid:         testDevid,
+		InstallStatus: &pb.DeviceStatusUpdateRequest_InstallStatusValue{InstallStatusValue: pb.InstallStatus_Initial},
+	})
+}
+
 func TestDiscard(t *testing.T) {
 	// Prepare
 	testDevid := "000000030000000000000001"
