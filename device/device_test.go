@@ -53,6 +53,40 @@ func TestGetDeviceList(t *testing.T) {
 	}
 }
 
+func TestGetDeviceFilterByGroup(t *testing.T) {
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	testGroupID := "0bee7b43-0b57-4b54-9062-430e2bd3fa79"
+
+	devs, err := cli.FilterList(ctx, &pb.DeviceFilterListRequest{
+		GroupId: &pb.DeviceFilterListRequest_GroupIdValue{GroupIdValue: testGroupID},
+	})
+
+	assert.Nil(t, err)
+
+	for _, dev := range devs {
+		assert.Equal(t, testGroupID, dev.GroupId)
+	}
+}
+
+func TestGetDeviceFilterByInstallStatus(t *testing.T) {
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	devs, err := cli.FilterList(ctx, &pb.DeviceFilterListRequest{
+		InstallStatus: &pb.DeviceFilterListRequest_InstallStatusValue{
+			InstallStatusValue: pb.InstallStatus_Installed,
+		},
+	})
+
+	assert.Nil(t, err)
+
+	for _, dev := range devs {
+		assert.Equal(t, pb.InstallStatus_Installed, dev.InstallStatus)
+	}
+}
+
 func TestGetDeviceDetailNonExist(t *testing.T) {
 	testDevid := "non-exist-device"
 

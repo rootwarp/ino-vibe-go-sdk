@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"io"
 	"log"
 	"math"
 	"time"
@@ -40,7 +41,10 @@ var (
 
 // Client is client for device instance.
 type Client interface {
+	// Deprecated:
 	List(context.Context, pb.InstallStatus) (*pb.DeviceListResponse, error)
+	FilterList(context.Context, *pb.DeviceFilterListRequest) ([]*pb.Device, error)
+
 	Detail(context.Context, string) (*pb.DeviceResponse, error)
 
 	UpdateInfo(context.Context, *pb.DeviceInfoUpdateRequest) (*pb.DeviceResponse, error)
@@ -109,7 +113,7 @@ func (c *client) getDatastoreClient() *datastore.Client {
 	return c.dsClient
 }
 
-// List returns slice of devices.
+// Deprecated: List returns slice of devices.
 func (c *client) List(ctx context.Context, installStatus pb.InstallStatus) (*pb.DeviceListResponse, error) {
 	cli := c.getDeviceClient()
 
@@ -119,6 +123,31 @@ func (c *client) List(ctx context.Context, installStatus pb.InstallStatus) (*pb.
 	resp, err := cli.List(ctx, &req)
 
 	return resp, err
+}
+
+// FilterList returns device of filter constraints.
+func (c *client) FilterList(ctx context.Context, f *pb.DeviceFilterListRequest) ([]*pb.Device, error) {
+	cli := c.getDeviceClient()
+
+	client, err := cli.FilterList(ctx, f)
+
+	retDevs := make([]*pb.Device, 0)
+
+	for {
+		dev, err := client.Recv()
+		if err == io.EOF {
+			err = nil
+			break
+		}
+
+		if err != nil {
+			return []*pb.Device{}, err
+		}
+
+		retDevs = append(retDevs, dev)
+	}
+
+	return retDevs, err
 }
 
 // Detail returns detail information of selected device.
