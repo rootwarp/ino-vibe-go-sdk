@@ -86,15 +86,15 @@ func (_m *MockClient) Discard(_a0 context.Context, _a1 *inovibe_api_v3.DiscardRe
 }
 
 // FilterList provides a mock function with given fields: _a0, _a1
-func (_m *MockClient) FilterList(_a0 context.Context, _a1 *inovibe_api_v3.DeviceFilterListRequest) ([]inovibe_api_v3.Device, error) {
+func (_m *MockClient) FilterList(_a0 context.Context, _a1 *inovibe_api_v3.DeviceFilterListRequest) ([]*inovibe_api_v3.Device, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 []inovibe_api_v3.Device
-	if rf, ok := ret.Get(0).(func(context.Context, *inovibe_api_v3.DeviceFilterListRequest) []inovibe_api_v3.Device); ok {
+	var r0 []*inovibe_api_v3.Device
+	if rf, ok := ret.Get(0).(func(context.Context, *inovibe_api_v3.DeviceFilterListRequest) []*inovibe_api_v3.Device); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]inovibe_api_v3.Device)
+			r0 = ret.Get(0).([]*inovibe_api_v3.Device)
 		}
 	}
 
