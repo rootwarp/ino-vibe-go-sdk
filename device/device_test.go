@@ -42,6 +42,23 @@ func TestGetDeviceListUnauthorized(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestGetInitial(t *testing.T) {
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	devs, err := cli.FilterList(ctx, &pb.DeviceFilterListRequest{
+		InstallStatus: &pb.DeviceFilterListRequest_InstallStatusValue{
+			InstallStatusValue: pb.InstallStatus_Initial,
+		},
+	})
+
+	fmt.Println(len(devs), err)
+	for _, dev := range devs {
+		assert.Equal(t, "", dev.InstallSessionKey)
+		assert.Equal(t, pb.InstallStatus_Initial, dev.InstallStatus)
+	}
+}
+
 func TestGetDeviceList(t *testing.T) {
 	tests := []pb.InstallStatus{
 		pb.InstallStatus_Installed,
