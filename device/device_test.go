@@ -8,10 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/firestore"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/api/option"
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
+)
+
+var (
+	db *firestore.Client
 )
 
 func init() {
@@ -20,6 +26,10 @@ func init() {
 		serverURL = target + "-" + serverURL
 	}
 	fmt.Println(serverURL)
+
+	ctx := context.Background()
+	option := option.WithCredentialsFile(os.Getenv("FIREBASE_APPLICATION_CREDENTIALS"))
+	db, _ = firestore.NewClient(ctx, "crash-detector", option)
 }
 
 func TestGetDeviceListUnauthorized(t *testing.T) {
@@ -466,6 +476,17 @@ func TestInstall(t *testing.T) {
 	assert.False(t, device.IsAlarmed)
 	assert.Nil(t, device.AlarmDate)
 	assert.Nil(t, device.MuteDate)
+
+	// Check firestore.
+	docRef := db.Doc(fmt.Sprintf("device/%s/install/%s", testDevid, resp.InstallSessionKey))
+	doc, err := docRef.Get(ctx)
+
+	assert.Nil(t, err)
+
+	data := doc.Data()
+
+	assert.Equal(t, req.Installer, data["installer"].(string))
+	assert.Equal(t, req.GroupId, data["group_id"].(string))
 
 	// Clear
 	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
