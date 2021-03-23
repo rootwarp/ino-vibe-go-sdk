@@ -17,6 +17,17 @@ var (
 	}
 )
 
+type Groups []Group
+
+func (g Groups) IDs() []string {
+	ids := make([]string, len(g))
+	for i, group := range g {
+		ids[i] = group.ID
+	}
+
+	return ids
+}
+
 func init() {
 	target := os.Getenv("TEST_TARGET")
 	if target != "" {
@@ -269,4 +280,65 @@ func TestGroupMembersWithEmptyGroupID(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(users))
+}
+
+func TestGroupCreate(t *testing.T) {
+	tests := []struct {
+		Name     string
+		ParentID string
+	}{
+		{
+			Name:     "SDK Test",
+			ParentID: "",
+		},
+		{
+			Name:     "SDK Test",
+			ParentID: "0bee7b43-0b57-4b54-9062-430e2bd3fa79",
+		},
+	}
+
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	for _, test := range tests {
+		var parentGroup *Group
+		if test.ParentID != "" {
+			parentGroup = &Group{ID: test.ParentID}
+		}
+
+		g, err := cli.Create(ctx, test.Name, parentGroup)
+
+		assert.Nil(t, err)
+		assert.Equal(t, test.Name, g.Name)
+
+		groupName, err := cli.GetName(ctx, g.ID)
+
+		assert.Nil(t, err)
+		assert.Equal(t, g.Name, groupName)
+
+		if parentGroup != nil {
+			children, _ := cli.GetChildGroups(ctx, parentGroup.ID)
+			childrenIDs := Groups(children).IDs()
+			assert.Contains(t, childrenIDs, g.ID)
+		}
+
+		err = cli.Delete(ctx, g.ID)
+
+		assert.Nil(t, err)
+
+		_, err = cli.GetName(ctx, g.ID)
+
+		assert.Equal(t, ErrGroupNonExist, err)
+	}
+}
+
+func TestGroupDeleteNonExist(t *testing.T) {
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	err := cli.Delete(ctx, "non-exist-group")
+
+	fmt.Println(err)
+
+	// TODO: Response 400. right?
 }
