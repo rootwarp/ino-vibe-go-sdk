@@ -14,6 +14,43 @@ type MockClient struct {
 	mock.Mock
 }
 
+// Create provides a mock function with given fields: ctx, name, parent
+func (_m *MockClient) Create(ctx context.Context, name string, parent *Group) (*Group, error) {
+	ret := _m.Called(ctx, name, parent)
+
+	var r0 *Group
+	if rf, ok := ret.Get(0).(func(context.Context, string, *Group) *Group); ok {
+		r0 = rf(ctx, name, parent)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*Group)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *Group) error); ok {
+		r1 = rf(ctx, name, parent)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Delete provides a mock function with given fields: ctx, groupID
+func (_m *MockClient) Delete(ctx context.Context, groupID string) error {
+	ret := _m.Called(ctx, groupID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, groupID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetChildGroups provides a mock function with given fields: ctx, groupID
 func (_m *MockClient) GetChildGroups(ctx context.Context, groupID string) ([]Group, error) {
 	ret := _m.Called(ctx, groupID)

@@ -52,6 +52,9 @@ type Client interface {
 	GetChildGroups(ctx context.Context, groupID string) ([]Group, error)
 	GetParentUsers(ctx context.Context, groupID string) ([]string, error)
 	GetMembers(ctx context.Context, groupID string) ([]user.User, error)
+
+	Create(ctx context.Context, name string, parent *Group) (*Group, error)
+	Delete(ctx context.Context, groupID string) error
 }
 
 type client struct {
@@ -148,7 +151,6 @@ func (c *client) traverse(roots []*groupNode, depth int) []Group {
 	for i, g := range roots {
 		retGroups[i] = Group{ID: g.ID, Name: g.Name}
 		retGroups[i].Children = c.traverse(g.Children, depth+1)
-
 	}
 
 	return retGroups
@@ -268,6 +270,40 @@ func (c *client) GetMembers(ctx context.Context, groupID string) ([]user.User, e
 	}
 
 	return respUsers, nil
+}
+
+func (c *client) Create(ctx context.Context, name string, parent *Group) (*Group, error) {
+	cli := c.getGroupClient()
+
+	newGroup := &pb.Group{Name: name}
+	if parent != nil {
+		newGroup.ParentId = parent.ID
+	}
+
+	resp, err := cli.Create(ctx, newGroup)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	fmt.Println(resp)
+
+	newGroup = resp.Groups[0]
+
+	respGroup := &Group{
+		ID:   newGroup.Groupid,
+		Name: newGroup.Name,
+	}
+
+	return respGroup, nil
+}
+
+func (c *client) Delete(ctx context.Context, groupID string) error {
+	cli := c.getGroupClient()
+
+	_, err := cli.Delete(ctx, &pb.GroupRequest{Groupid: groupID})
+
+	return err
 }
 
 // NewClient creates new group client.

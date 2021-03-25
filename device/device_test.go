@@ -8,10 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/firestore"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/api/option"
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
+)
+
+var (
+	db *firestore.Client
 )
 
 func init() {
@@ -20,6 +26,10 @@ func init() {
 		serverURL = target + "-" + serverURL
 	}
 	fmt.Println(serverURL)
+
+	ctx := context.Background()
+	option := option.WithCredentialsFile(os.Getenv("FIREBASE_APPLICATION_CREDENTIALS"))
+	db, _ = firestore.NewClient(ctx, "crash-detector", option)
 }
 
 func TestGetDeviceListUnauthorized(t *testing.T) {
@@ -30,6 +40,23 @@ func TestGetDeviceListUnauthorized(t *testing.T) {
 	_, err := cli.List(ctx, pb.InstallStatus_Installed)
 
 	assert.NotNil(t, err)
+}
+
+func TestGetInitial(t *testing.T) {
+	ctx := context.Background()
+	cli, _ := NewClient()
+
+	devs, err := cli.FilterList(ctx, &pb.DeviceFilterListRequest{
+		InstallStatus: &pb.DeviceFilterListRequest_InstallStatusValue{
+			InstallStatusValue: pb.InstallStatus_Initial,
+		},
+	})
+
+	fmt.Println(len(devs), err)
+	for _, dev := range devs {
+		assert.Equal(t, "", dev.InstallSessionKey)
+		assert.Equal(t, pb.InstallStatus_Initial, dev.InstallStatus)
+	}
 }
 
 func TestGetDeviceList(t *testing.T) {
@@ -407,6 +434,27 @@ func TestInstall(t *testing.T) {
 		GroupId:   "",
 	}
 
+	// Intentionally change info.
+	_, err := cli.UpdateInfo(ctx, &pb.DeviceInfoUpdateRequest{
+		Devid:     testDevid,
+		RecogType: &pb.DeviceInfoUpdateRequest_RecogTypeValue{RecogTypeValue: pb.RecogType_RecogNaive},
+	})
+
+	// Intentionally change config.
+	_, err = cli.UpdateConfig(ctx, &pb.DeviceConfigUpdateRequest{
+		Devid:        testDevid,
+		SensorRange:  &pb.DeviceConfigUpdateRequest_SensorRangeValue{SensorRangeValue: pb.SensorRangeType_Gravity16},
+		IntThreshold: &pb.DeviceConfigUpdateRequest_IntThresholdValue{IntThresholdValue: 1100},
+		WaveBlocks:   &pb.DeviceConfigUpdateRequest_WaveBlocksValue{WaveBlocksValue: 12},
+		SampleRate:   &pb.DeviceConfigUpdateRequest_SampleRateValue{SampleRateValue: 0},
+		RecogParam_0: &pb.DeviceConfigUpdateRequest_RecogParam_0Value{RecogParam_0Value: 0},
+		RecogParam_1: &pb.DeviceConfigUpdateRequest_RecogParam_1Value{RecogParam_1Value: 0},
+		RecogParam_2: &pb.DeviceConfigUpdateRequest_RecogParam_2Value{RecogParam_2Value: 0},
+		MuteDate: &pb.DeviceConfigUpdateRequest_MuteDateValue{
+			MuteDateValue: &timestamp.Timestamp{Seconds: time.Now().Unix()},
+		},
+	})
+
 	// First Test PrepareInstall
 	current := time.Now()
 
@@ -466,6 +514,24 @@ func TestInstall(t *testing.T) {
 	assert.False(t, device.IsAlarmed)
 	assert.Nil(t, device.AlarmDate)
 	assert.Nil(t, device.MuteDate)
+	assert.Equal(t, pb.RecogType_RecogV4, device.RecogType)
+	assert.Equal(t, pb.SensorRangeType_Gravity2, device.SensorRange)
+	assert.Equal(t, float64(100), device.SampleRate)
+	assert.Equal(t, uint32(1), device.WaveBlocks)
+	assert.Equal(t, float64(12), device.RecogParam_0)
+	assert.Equal(t, float64(0.6), device.RecogParam_1)
+	assert.Equal(t, float64(8), device.RecogParam_2)
+
+	// Check firestore.
+	docRef := db.Doc(fmt.Sprintf("device/%s/install/%s", testDevid, resp.InstallSessionKey))
+	doc, err := docRef.Get(ctx)
+
+	assert.Nil(t, err)
+
+	data := doc.Data()
+
+	assert.Equal(t, req.Installer, data["installer"].(string))
+	assert.Equal(t, req.GroupId, data["group_id"].(string))
 
 	// Clear
 	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
