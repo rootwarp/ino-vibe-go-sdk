@@ -128,7 +128,7 @@ func TestGetDeviceDetailNonExist(t *testing.T) {
 }
 
 func TestUpdateDeviceInfo(t *testing.T) {
-	testDevID := "000000030000000000000001"
+	testDevID := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -148,7 +148,7 @@ func TestUpdateDeviceInfo(t *testing.T) {
 		AppFwVer:       &pb.DeviceInfoUpdateRequest_AppFwVerValue{AppFwVerValue: fmt.Sprintf("app-%d", r.Uint32())},
 		LoraFwVer:      &pb.DeviceInfoUpdateRequest_LoraFwVerValue{LoraFwVerValue: fmt.Sprintf("lora-%d", r.Uint32())},
 		RecogType:      &pb.DeviceInfoUpdateRequest_RecogTypeValue{RecogTypeValue: pb.RecogType(r.Int() % 2)},
-		InstallSession: &pb.DeviceInfoUpdateRequest_InstallSessionValue{InstallSessionValue: "fff75f20fc45a6fa0fb8445218b5a700244c93e2a7c7274e5f063e39fef230fd"},
+		InstallSession: &pb.DeviceInfoUpdateRequest_InstallSessionValue{InstallSessionValue: "e7d24da92e3a63ed0733dd54d5aee5914c43c264ff5819a826d1e57bb5855d3c"},
 	}
 
 	resp, err := cli.UpdateInfo(ctx, req)
@@ -161,11 +161,13 @@ func TestUpdateDeviceInfo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, req.Devid, resp.Devices[0].Devid)
 	assert.Equal(t, req.GetAliasValue(), resp.Devices[0].Alias)
+
 	assert.Equal(t, req.GetGroupIdValue(), resp.Devices[0].GroupId)
 	assert.Equal(t, req.GetLatitudeValue(), resp.Devices[0].Latitude)
 	assert.Equal(t, req.GetLongitudeValue(), resp.Devices[0].Longitude)
 	assert.Equal(t, req.GetInstallerValue(), resp.Devices[0].Installer)
 	assert.Equal(t, req.GetInstallDateValue().Seconds, resp.Devices[0].InstallDate.Seconds)
+
 	assert.Equal(t, req.GetDevTypeValue(), resp.Devices[0].DevType)
 	assert.Equal(t, req.GetAppFwVerValue(), resp.Devices[0].AppFwVer)
 	assert.Equal(t, req.GetLoraFwVerValue(), resp.Devices[0].LoraFwVer)
@@ -174,7 +176,7 @@ func TestUpdateDeviceInfo(t *testing.T) {
 }
 
 func TestUpdateDeviceStatus(t *testing.T) {
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 
 	ctx := context.Background()
 	cli, _ := NewClient()
@@ -234,7 +236,7 @@ func TestUpdateDeviceStatus(t *testing.T) {
 }
 
 func TestUpdateDeviceConfig(t *testing.T) {
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -370,7 +372,7 @@ func TestStoreStatusLog(t *testing.T) {
 			ExpectErr:   ErrNonExistDevice,
 		},
 		{
-			DevID:       "000000030000000000000001",
+			DevID:       "ino-vibe-test",
 			Battery:     40,
 			Temperature: 2,
 			RSSI:        -80,
@@ -409,16 +411,18 @@ func TestStoreStatusLog(t *testing.T) {
 }
 
 func TestInstall(t *testing.T) {
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
+	// Reset device.
 	_, _ = cli.UpdateInfo(ctx, &pb.DeviceInfoUpdateRequest{
-		Devid:     testDevid,
-		Alias:     &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: ""},
-		Latitude:  &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: 0},
-		Longitude: &pb.DeviceInfoUpdateRequest_LongitudeValue{LongitudeValue: 0},
-		Installer: &pb.DeviceInfoUpdateRequest_InstallerValue{InstallerValue: ""},
+		Devid:          testDevid,
+		Alias:          &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: ""},
+		Latitude:       &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: 0},
+		Longitude:      &pb.DeviceInfoUpdateRequest_LongitudeValue{LongitudeValue: 0},
+		Installer:      &pb.DeviceInfoUpdateRequest_InstallerValue{InstallerValue: ""},
+		InstallSession: &pb.DeviceInfoUpdateRequest_InstallSessionValue{InstallSessionValue: ""},
 	})
 	_, _ = cli.UpdateStatus(ctx, &pb.DeviceStatusUpdateRequest{
 		Devid:         testDevid,
@@ -542,7 +546,7 @@ func TestInstall(t *testing.T) {
 
 func TestWaitInstallComplete(t *testing.T) {
 	// Prepare
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -581,7 +585,7 @@ func TestWaitInstallComplete(t *testing.T) {
 }
 
 func TestInstallCompleteOnOtherStatus(t *testing.T) {
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 
 	ctx := context.Background()
 	cli, _ := NewClient()
@@ -609,7 +613,8 @@ func TestInstallCompleteOnOtherStatus(t *testing.T) {
 
 func TestUninstalling(t *testing.T) {
 	// Prepare
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
+
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -646,7 +651,7 @@ func TestUninstalling(t *testing.T) {
 
 func TestUninstall(t *testing.T) {
 	// Prepare
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -688,7 +693,7 @@ func TestUninstall(t *testing.T) {
 
 func TestUninstallOnUninstalling(t *testing.T) {
 	// Prepare
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -731,7 +736,7 @@ func TestUninstallOnUninstalling(t *testing.T) {
 
 func TestDiscard(t *testing.T) {
 	// Prepare
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -768,7 +773,7 @@ func TestDiscard(t *testing.T) {
 
 func TestDiscardOnOtherStatus(t *testing.T) {
 	// Prepare
-	testDevid := "000000030000000000000001"
+	testDevid := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -823,7 +828,7 @@ func TestLastInclinationLog(t *testing.T) {
 		},
 		{
 			Desc:      "No inclinations",
-			DevID:     "000000030000000000000001",
+			DevID:     "ino-vibe-test",
 			ExpectErr: ErrNoEntities,
 		},
 	}
@@ -882,7 +887,7 @@ func TestStoreInclination(t *testing.T) {
 		},
 		{
 			Desc:      "Store request on not installed device",
-			DevID:     "000000030000000000000001",
+			DevID:     "ino-vibe-test",
 			RawX:      0,
 			RawY:      0,
 			RawZ:      998.0,

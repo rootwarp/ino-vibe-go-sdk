@@ -182,6 +182,8 @@ func TestGroupGetIDsOK(t *testing.T) {
 
 	groupIDs, err := cli.GetIDs(ctx, []string{fixtureGroups[0].Name, fixtureGroups[1].Name})
 
+	fmt.Println(groupIDs)
+
 	assert.Nil(t, err)
 	assert.Equal(t, fixtureGroups[0].Groupid, groupIDs[0])
 	assert.Equal(t, fixtureGroups[1].Groupid, groupIDs[1])
