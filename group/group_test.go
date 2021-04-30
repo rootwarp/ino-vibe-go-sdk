@@ -47,14 +47,16 @@ func TestGroupList(t *testing.T) {
 	ctx := context.Background()
 
 	groups, _ := cli.List(ctx, "")
-	groupIDs := map[string]bool{}
+	groupMap := map[string]Group{}
 	for _, g := range groups {
-		groupIDs[g.ID] = true
+		groupMap[g.ID] = g
 	}
 
 	for _, rootID := range partialRootGroups {
-		assert.Contains(t, groupIDs, rootID)
+		assert.Contains(t, groupMap, rootID)
 	}
+
+	assert.True(t, groupMap["0bee7b43-0b57-4b54-9062-430e2bd3fa79"].Individual)
 }
 
 func TestGroupListForSelected(t *testing.T) {
@@ -104,7 +106,6 @@ func TestGroupListForSelected(t *testing.T) {
 			assert.Contains(t, groupMap, id)
 		}
 	}
-
 }
 
 func flatten(groups []Group) []Group {

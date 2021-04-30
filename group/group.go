@@ -31,16 +31,18 @@ var (
 
 // Group is data structure for describing Auth0 Group.
 type Group struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Children []Group `json:"children"`
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	Children   []Group `json:"children"`
+	Individual bool    `json:"individual"`
 }
 
 type groupNode struct {
-	ID       string
-	Name     string
-	Parent   *groupNode
-	Children []*groupNode
+	ID         string
+	Name       string
+	Parent     *groupNode
+	Children   []*groupNode
+	Individual bool
 }
 
 // Client is client for Group.
@@ -107,8 +109,15 @@ func (c *client) List(ctx context.Context, groupID string) ([]Group, error) {
 			}
 		}
 
+		fmt.Printf("Recv %+v\n", group)
+
 		pbGroups[group.Groupid] = group
-		groupNodes[group.Groupid] = &groupNode{ID: group.Groupid, Name: group.Name, Children: []*groupNode{}}
+		groupNodes[group.Groupid] = &groupNode{
+			ID:         group.Groupid,
+			Name:       group.Name,
+			Children:   []*groupNode{},
+			Individual: group.Individual,
+		}
 	}
 
 	// Find current root
@@ -149,7 +158,7 @@ func (c *client) traverse(roots []*groupNode, depth int) []Group {
 
 	retGroups := make([]Group, len(roots))
 	for i, g := range roots {
-		retGroups[i] = Group{ID: g.ID, Name: g.Name}
+		retGroups[i] = Group{ID: g.ID, Name: g.Name, Individual: g.Individual}
 		retGroups[i].Children = c.traverse(g.Children, depth+1)
 	}
 
@@ -227,7 +236,7 @@ func (c *client) GetChildGroups(ctx context.Context, groupID string) ([]Group, e
 
 	groups := make([]Group, len(resp.Groups))
 	for i, group := range resp.Groups {
-		groups[i] = Group{Name: group.Name, ID: group.Groupid}
+		groups[i] = Group{Name: group.Name, ID: group.Groupid, Individual: group.Individual}
 	}
 
 	return groups, nil

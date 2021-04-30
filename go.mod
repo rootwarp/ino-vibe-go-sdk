@@ -3,7 +3,7 @@ module github.com/rootwarp/ino-vibe-go-sdk
 go 1.14
 
 require (
-	bitbucket.org/ino-on/ino-vibe-api v0.0.0-20210319053155-41fb018634dc
+	bitbucket.org/ino-on/ino-vibe-api v0.0.0-20210430042330-498854395592
 	cloud.google.com/go v0.79.0 // indirect
 	cloud.google.com/go/datastore v1.3.0
 	cloud.google.com/go/firestore v1.5.0

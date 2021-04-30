@@ -32,6 +32,8 @@ bitbucket.org/ino-on/ino-vibe-api v0.0.0-20210226015248-cbdf004d44c8 h1:2AzrEGie
 bitbucket.org/ino-on/ino-vibe-api v0.0.0-20210226015248-cbdf004d44c8/go.mod h1:gXGZ8At6+NCndHqesQOdsnwanmV3hFQ0E8Ii+sf1Dvk=
 bitbucket.org/ino-on/ino-vibe-api v0.0.0-20210319053155-41fb018634dc h1:8uEblOs1sa6Lp07Gq7RAa33wzG0xlSKBzOVuNVtAQMc=
 bitbucket.org/ino-on/ino-vibe-api v0.0.0-20210319053155-41fb018634dc/go.mod h1:gXGZ8At6+NCndHqesQOdsnwanmV3hFQ0E8Ii+sf1Dvk=
+bitbucket.org/ino-on/ino-vibe-api v0.0.0-20210430042330-498854395592 h1:ELNA24EYSmqI/rEI1EqI5LyzD/bkgf6LfkH7IzqbuMA=
+bitbucket.org/ino-on/ino-vibe-api v0.0.0-20210430042330-498854395592/go.mod h1:gXGZ8At6+NCndHqesQOdsnwanmV3hFQ0E8Ii+sf1Dvk=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.37.4 h1:glPeL3BQJsbF6aIIYfZizMwc5LTYz250bDMjttbBGAU=
