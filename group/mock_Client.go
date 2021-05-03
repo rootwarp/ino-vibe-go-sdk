@@ -207,3 +207,17 @@ func (_m *MockClient) List(ctx context.Context, groupID string) ([]Group, error)
 
 	return r0, r1
 }
+
+// Update provides a mock function with given fields: ctx, groupID, name, parentID, individual
+func (_m *MockClient) Update(ctx context.Context, groupID string, name string, parentID string, individual bool) error {
+	ret := _m.Called(ctx, groupID, name, parentID, individual)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, bool) error); ok {
+		r0 = rf(ctx, groupID, name, parentID, individual)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

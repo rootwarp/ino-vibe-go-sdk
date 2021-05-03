@@ -57,6 +57,7 @@ type Client interface {
 
 	Create(ctx context.Context, name string, parent *Group) (*Group, error)
 	Delete(ctx context.Context, groupID string) error
+	Update(ctx context.Context, groupID, name, parentID string, individual bool) error
 }
 
 type client struct {
@@ -108,8 +109,6 @@ func (c *client) List(ctx context.Context, groupID string) ([]Group, error) {
 				return []Group{}, err
 			}
 		}
-
-		fmt.Printf("Recv %+v\n", group)
 
 		pbGroups[group.Groupid] = group
 		groupNodes[group.Groupid] = &groupNode{
@@ -312,6 +311,23 @@ func (c *client) Delete(ctx context.Context, groupID string) error {
 
 	_, err := cli.Delete(ctx, &pb.GroupRequest{Groupid: groupID})
 
+	return err
+}
+
+func (c *client) Update(ctx context.Context, groupID, name, parentID string, individual bool) error {
+	cli := c.getGroupClient()
+
+	resp, err := cli.Update(ctx, &pb.Group{
+		Groupid:    groupID,
+		Name:       name,
+		ParentId:   parentID,
+		Individual: individual,
+	})
+
+	_ = resp
+	_ = err
+
+	fmt.Println(resp, err)
 	return err
 }
 
