@@ -59,6 +59,16 @@ func TestGroupList(t *testing.T) {
 	assert.True(t, groupMap["0bee7b43-0b57-4b54-9062-430e2bd3fa79"].Individual)
 }
 
+func TestGroupListNotExist(t *testing.T) {
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	groups, err := cli.List(ctx, "not-exist-group-id")
+
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(groups))
+}
+
 func TestGroupListForSelected(t *testing.T) {
 	/*
 		이노온 contains
