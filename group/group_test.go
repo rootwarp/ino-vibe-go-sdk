@@ -47,14 +47,26 @@ func TestGroupList(t *testing.T) {
 	ctx := context.Background()
 
 	groups, _ := cli.List(ctx, "")
-	groupIDs := map[string]bool{}
+	groupMap := map[string]Group{}
 	for _, g := range groups {
-		groupIDs[g.ID] = true
+		groupMap[g.ID] = g
 	}
 
 	for _, rootID := range partialRootGroups {
-		assert.Contains(t, groupIDs, rootID)
+		assert.Contains(t, groupMap, rootID)
 	}
+
+	assert.True(t, groupMap["0bee7b43-0b57-4b54-9062-430e2bd3fa79"].Individual)
+}
+
+func TestGroupListNotExist(t *testing.T) {
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	groups, err := cli.List(ctx, "not-exist-group-id")
+
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(groups))
 }
 
 func TestGroupListForSelected(t *testing.T) {
@@ -104,7 +116,6 @@ func TestGroupListForSelected(t *testing.T) {
 			assert.Contains(t, groupMap, id)
 		}
 	}
-
 }
 
 func flatten(groups []Group) []Group {
@@ -181,6 +192,8 @@ func TestGroupGetIDsOK(t *testing.T) {
 	ctx := context.Background()
 
 	groupIDs, err := cli.GetIDs(ctx, []string{fixtureGroups[0].Name, fixtureGroups[1].Name})
+
+	fmt.Println(groupIDs)
 
 	assert.Nil(t, err)
 	assert.Equal(t, fixtureGroups[0].Groupid, groupIDs[0])
@@ -341,4 +354,28 @@ func TestGroupDeleteNonExist(t *testing.T) {
 	fmt.Println(err)
 
 	// TODO: Response 400. right?
+}
+
+func TestGroupUpdate(t *testing.T) {
+	cli, _ := NewClient()
+	ctx := context.Background()
+
+	groupID := "1590fe0a-e416-48f7-b9c7-d8f4f37f4d64"
+
+	err := cli.Update(ctx, groupID, "testing #2", "0bee7b43-0b57-4b54-9062-430e2bd3fa79", true)
+	assert.Nil(t, err)
+
+	groupTree, err := cli.List(ctx, groupID)
+	g := groupTree[0]
+
+	assert.Equal(t, "testing #2", g.Name)
+	assert.True(t, g.Individual)
+
+	_ = cli.Update(ctx, groupID, "testing", "", false)
+
+	groupTree, err = cli.List(ctx, groupID)
+	g = groupTree[0]
+
+	assert.Equal(t, "testing", g.Name)
+	assert.False(t, g.Individual)
 }
