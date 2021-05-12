@@ -73,7 +73,7 @@ func TestGroupListForSelected(t *testing.T) {
 	/*
 		이노온 contains
 		이노온 - 운영
-		이노온 - 개발
+		이노온 - 개발 607f9db4-7eee-4a08-894d-356c8a462ae1
 		이노온 - 개발 - 서버
 		이노온 - 개발 - 앱
 	*/
@@ -83,10 +83,12 @@ func TestGroupListForSelected(t *testing.T) {
 
 	tests := []struct {
 		GroupID         string
+		ExpectParentID  string
 		ContainGroupIDs []string
 	}{
 		{
-			GroupID: "0bee7b43-0b57-4b54-9062-430e2bd3fa79",
+			GroupID:        "0bee7b43-0b57-4b54-9062-430e2bd3fa79",
+			ExpectParentID: "",
 			ContainGroupIDs: []string{
 				"0bee7b43-0b57-4b54-9062-430e2bd3fa79",
 				"607f9db4-7eee-4a08-894d-356c8a462ae1",
@@ -96,7 +98,8 @@ func TestGroupListForSelected(t *testing.T) {
 			},
 		},
 		{
-			GroupID: "74fc3dda-c4d4-4589-bd9c-858c3d178d83",
+			GroupID:        "74fc3dda-c4d4-4589-bd9c-858c3d178d83",
+			ExpectParentID: "607f9db4-7eee-4a08-894d-356c8a462ae1",
 			ContainGroupIDs: []string{
 				"74fc3dda-c4d4-4589-bd9c-858c3d178d83",
 			},
@@ -115,6 +118,8 @@ func TestGroupListForSelected(t *testing.T) {
 		for _, id := range test.ContainGroupIDs {
 			assert.Contains(t, groupMap, id)
 		}
+
+		assert.Equal(t, test.ExpectParentID, groups[0].ParentID)
 	}
 }
 
@@ -193,8 +198,6 @@ func TestGroupGetIDsOK(t *testing.T) {
 
 	groupIDs, err := cli.GetIDs(ctx, []string{fixtureGroups[0].Name, fixtureGroups[1].Name})
 
-	fmt.Println(groupIDs)
-
 	assert.Nil(t, err)
 	assert.Equal(t, fixtureGroups[0].Groupid, groupIDs[0])
 	assert.Equal(t, fixtureGroups[1].Groupid, groupIDs[1])
@@ -219,9 +222,16 @@ func TestGroupGetChildsOK(t *testing.T) {
 	ctx := context.Background()
 
 	for _, expect := range expectations {
-		_, err := cli.GetChildGroups(ctx, expect.GroupID)
-
+		children, err := cli.GetChildGroups(ctx, expect.GroupID)
 		assert.Equal(t, expect.ExpectErr, err)
+
+		if expect.ExpectErr != nil {
+			continue
+		}
+
+		for _, g := range children {
+			assert.Equal(t, expect.GroupID, g.ParentID)
+		}
 	}
 }
 

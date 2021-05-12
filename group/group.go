@@ -32,6 +32,7 @@ var (
 // Group is data structure for describing Auth0 Group.
 type Group struct {
 	ID         string  `json:"id"`
+	ParentID   string  `json:"parent_id"`
 	Name       string  `json:"name"`
 	Children   []Group `json:"children"`
 	Individual bool    `json:"individual"`
@@ -40,7 +41,7 @@ type Group struct {
 type groupNode struct {
 	ID         string
 	Name       string
-	Parent     *groupNode
+	ParentID   string
 	Children   []*groupNode
 	Individual bool
 }
@@ -114,6 +115,7 @@ func (c *client) List(ctx context.Context, groupID string) ([]Group, error) {
 		groupNodes[group.Groupid] = &groupNode{
 			ID:         group.Groupid,
 			Name:       group.Name,
+			ParentID:   group.ParentId,
 			Children:   []*groupNode{},
 			Individual: group.Individual,
 		}
@@ -157,8 +159,11 @@ func (c *client) traverse(roots []*groupNode, depth int) []Group {
 
 	retGroups := make([]Group, len(roots))
 	for i, g := range roots {
-		retGroups[i] = Group{ID: g.ID, Name: g.Name, Individual: g.Individual}
+		retGroups[i] = Group{ID: g.ID, Name: g.Name, Individual: g.Individual, ParentID: g.ParentID}
 		retGroups[i].Children = c.traverse(g.Children, depth+1)
+		for _, c := range retGroups[i].Children {
+			c.ParentID = retGroups[i].ID
+		}
 	}
 
 	return retGroups
@@ -235,7 +240,7 @@ func (c *client) GetChildGroups(ctx context.Context, groupID string) ([]Group, e
 
 	groups := make([]Group, len(resp.Groups))
 	for i, group := range resp.Groups {
-		groups[i] = Group{Name: group.Name, ID: group.Groupid, Individual: group.Individual}
+		groups[i] = Group{Name: group.Name, ID: group.Groupid, Individual: group.Individual, ParentID: groupID}
 	}
 
 	return groups, nil
