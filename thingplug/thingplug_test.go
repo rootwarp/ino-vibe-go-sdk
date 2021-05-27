@@ -44,3 +44,32 @@ func TestThingplugBaseReset(t *testing.T) {
 
 	assert.Nil(t, err)
 }
+
+func TestRegisterSubscription(t *testing.T) {
+
+	tests := []struct {
+		Desc      string
+		DeviceID  string
+		ExpectErr error
+	}{
+		{
+			Desc:      "Success",
+			DeviceID:  testDevID,
+			ExpectErr: nil,
+		},
+
+		{
+			Desc:      "Not exist",
+			DeviceID:  "non-exist-device-id",
+			ExpectErr: ErrNotExistDevice,
+		},
+	}
+
+	ctx := context.Background()
+
+	for _, test := range tests {
+		err := cli.RegisterSubscription(ctx, test.DeviceID)
+
+		assert.Equal(t, test.ExpectErr, err)
+	}
+}

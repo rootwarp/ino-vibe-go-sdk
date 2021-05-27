@@ -3,6 +3,7 @@ package thingplug
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"fmt"
 
 	pb "bitbucket.org/ino-on/ino-vibe-api"
@@ -18,11 +19,17 @@ var (
 	serverURL = "grpc.ino-vibe.ino-on.dev:443"
 )
 
+// Errors
+var (
+	ErrNotExistDevice = errors.New("Device is not exist")
+)
+
 // Client provides control interfaces for Ino-Vibe.
 type Client interface {
 	PowerOff(ctx context.Context, devid string) error
 	BaseReset(ctx context.Context, devid string) error
 	Reset(ctx context.Context, devid string) error
+	RegisterSubscription(ctx context.Context, devid string) error
 	Close()
 }
 
@@ -51,6 +58,21 @@ func (c *client) Reset(ctx context.Context, devid string) error {
 	fmt.Println(resp)
 
 	return err
+}
+
+func (c *client) RegisterSubscription(ctx context.Context, devid string) error {
+	resp, err := c.thingplugClient.Register(ctx, &pb.ThingplugDeviceRequest{
+		Devid: devid,
+	})
+	if err != nil {
+		return err
+	}
+
+	if resp.ResponseCode == pb.ResponseCode_NON_EXIST {
+		return ErrNotExistDevice
+	}
+
+	return nil
 }
 
 func (c *client) Close() {
