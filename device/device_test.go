@@ -128,7 +128,6 @@ func TestGetDeviceDetailNonExist(t *testing.T) {
 }
 
 func TestUpdateDeviceInfo(t *testing.T) {
-	testDevID := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -137,7 +136,6 @@ func TestUpdateDeviceInfo(t *testing.T) {
 
 	// InstallSession key should not be random variable because it has foreign key constraints.
 	req := &pb.DeviceInfoUpdateRequest{
-		Devid:          testDevID,
 		Alias:          &pb.DeviceInfoUpdateRequest_AliasValue{AliasValue: fmt.Sprintf("alias-%d", r.Uint32())},
 		GroupId:        &pb.DeviceInfoUpdateRequest_GroupIdValue{GroupIdValue: fmt.Sprintf("group-%d", r.Uint32())},
 		Latitude:       &pb.DeviceInfoUpdateRequest_LatitudeValue{LatitudeValue: r.Float64()},
@@ -151,33 +149,64 @@ func TestUpdateDeviceInfo(t *testing.T) {
 		InstallSession: &pb.DeviceInfoUpdateRequest_InstallSessionValue{InstallSessionValue: "e7d24da92e3a63ed0733dd54d5aee5914c43c264ff5819a826d1e57bb5855d3c"},
 	}
 
-	resp, err := cli.UpdateInfo(ctx, req)
+	tests := []struct {
+		Desc       string
+		DeviceID   string
+		Request    *pb.DeviceInfoUpdateRequest
+		ExpectCode pb.ResponseCode
+	}{
+		{
+			Desc:       "Update Success",
+			DeviceID:   "ino-vibe-test",
+			Request:    req,
+			ExpectCode: pb.ResponseCode_SUCCESS,
+		},
+		{
+			Desc:       "empty device",
+			DeviceID:   "",
+			Request:    req,
+			ExpectCode: pb.ResponseCode_NON_EXIST,
+		},
+		{
+			Desc:       "Not exist device",
+			DeviceID:   "not-exist-device-id",
+			Request:    req,
+			ExpectCode: pb.ResponseCode_NON_EXIST,
+		},
+	}
 
-	assert.Nil(t, err)
-	assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
+	for _, test := range tests {
+		test.Request.Devid = test.DeviceID
 
-	resp, err = cli.Detail(ctx, testDevID)
+		resp, err := cli.UpdateInfo(ctx, test.Request)
 
-	assert.Nil(t, err)
-	assert.Equal(t, req.Devid, resp.Devices[0].Devid)
-	assert.Equal(t, req.GetAliasValue(), resp.Devices[0].Alias)
+		assert.Equal(t, test.ExpectCode, resp.ResultCode)
 
-	assert.Equal(t, req.GetGroupIdValue(), resp.Devices[0].GroupId)
-	assert.Equal(t, req.GetLatitudeValue(), resp.Devices[0].Latitude)
-	assert.Equal(t, req.GetLongitudeValue(), resp.Devices[0].Longitude)
-	assert.Equal(t, req.GetInstallerValue(), resp.Devices[0].Installer)
-	assert.Equal(t, req.GetInstallDateValue().Seconds, resp.Devices[0].InstallDate.Seconds)
+		if test.ExpectCode == pb.ResponseCode_SUCCESS {
+			assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
 
-	assert.Equal(t, req.GetDevTypeValue(), resp.Devices[0].DevType)
-	assert.Equal(t, req.GetAppFwVerValue(), resp.Devices[0].AppFwVer)
-	assert.Equal(t, req.GetLoraFwVerValue(), resp.Devices[0].LoraFwVer)
-	assert.Equal(t, req.GetRecogTypeValue(), resp.Devices[0].RecogType)
-	assert.Equal(t, req.GetInstallSessionValue(), resp.Devices[0].InstallSessionKey)
+			resp, err = cli.Detail(ctx, test.DeviceID)
+
+			assert.Nil(t, err)
+			assert.Equal(t, req.Devid, resp.Devices[0].Devid)
+			assert.Equal(t, req.GetAliasValue(), resp.Devices[0].Alias)
+
+			assert.Equal(t, req.GetGroupIdValue(), resp.Devices[0].GroupId)
+			assert.Equal(t, req.GetLatitudeValue(), resp.Devices[0].Latitude)
+			assert.Equal(t, req.GetLongitudeValue(), resp.Devices[0].Longitude)
+			assert.Equal(t, req.GetInstallerValue(), resp.Devices[0].Installer)
+			assert.Equal(t, req.GetInstallDateValue().Seconds, resp.Devices[0].InstallDate.Seconds)
+
+			assert.Equal(t, req.GetDevTypeValue(), resp.Devices[0].DevType)
+			assert.Equal(t, req.GetAppFwVerValue(), resp.Devices[0].AppFwVer)
+			assert.Equal(t, req.GetLoraFwVerValue(), resp.Devices[0].LoraFwVer)
+			assert.Equal(t, req.GetRecogTypeValue(), resp.Devices[0].RecogType)
+			assert.Equal(t, req.GetInstallSessionValue(), resp.Devices[0].InstallSessionKey)
+		}
+	}
 }
 
 func TestUpdateDeviceStatus(t *testing.T) {
-	testDevid := "ino-vibe-test"
-
 	ctx := context.Background()
 	cli, _ := NewClient()
 
@@ -185,7 +214,6 @@ func TestUpdateDeviceStatus(t *testing.T) {
 
 	reqs := []*pb.DeviceStatusUpdateRequest{
 		{
-			Devid:       testDevid,
 			Battery:     &pb.DeviceStatusUpdateRequest_BatteryValue{BatteryValue: 100},
 			Temperature: &pb.DeviceStatusUpdateRequest_TemperatureValue{TemperatureValue: 20},
 			Rssi:        &pb.DeviceStatusUpdateRequest_RssiValue{RssiValue: -120},
@@ -197,7 +225,6 @@ func TestUpdateDeviceStatus(t *testing.T) {
 			AlarmDate:   &pb.DeviceStatusUpdateRequest_AlarmDateValue{AlarmDateValue: &timestamp.Timestamp{Seconds: current.Unix()}},
 		},
 		{
-			Devid:       testDevid,
 			Battery:     &pb.DeviceStatusUpdateRequest_BatteryValue{BatteryValue: 10},
 			Temperature: &pb.DeviceStatusUpdateRequest_TemperatureValue{TemperatureValue: -10},
 			Rssi:        &pb.DeviceStatusUpdateRequest_RssiValue{RssiValue: -100},
@@ -210,39 +237,69 @@ func TestUpdateDeviceStatus(t *testing.T) {
 		},
 	}
 
-	for _, req := range reqs {
-		resp, err := cli.UpdateStatus(ctx, req)
+	tests := []struct {
+		Desc       string
+		DeviceID   string
+		Reqs       []*pb.DeviceStatusUpdateRequest
+		ExpectCode pb.ResponseCode
+	}{
+		{
+			DeviceID:   "ino-vibe-test",
+			Reqs:       reqs,
+			ExpectCode: pb.ResponseCode_SUCCESS,
+		},
+		{
+			DeviceID:   "",
+			Reqs:       reqs,
+			ExpectCode: pb.ResponseCode_NON_EXIST,
+		},
 
-		assert.Nil(t, err)
-		assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
-		assert.Equal(t, testDevid, resp.Devices[0].Devid)
-		assert.Equal(t, req.GetBatteryValue(), resp.Devices[0].Battery)
-		assert.Equal(t, req.GetTemperatureValue(), resp.Devices[0].Temperature)
-		assert.Equal(t, req.GetRssiValue(), resp.Devices[0].Rssi)
-		assert.Equal(t, req.GetAccXMgValue(), resp.Devices[0].AccXMg)
-		assert.Equal(t, req.GetAccYMgValue(), resp.Devices[0].AccYMg)
-		assert.Equal(t, req.GetAccZMgValue(), resp.Devices[0].AccZMg)
-		assert.Equal(t, req.GetIsDeviceOkValue(), resp.Devices[0].IsDeviceOk)
-		assert.Equal(t, req.GetIsAlarmedValue(), resp.Devices[0].IsAlarmed)
-
-		alarmDate := req.GetAlarmDateValue()
-		if alarmDate.Seconds == 0 && alarmDate.Nanos == 0 {
-			assert.Nil(t, resp.Devices[0].AlarmDate)
-		} else {
-			assert.Equal(t, alarmDate.Seconds, resp.Devices[0].AlarmDate.Seconds)
-		}
+		{
+			DeviceID:   "not-exist-device-id",
+			Reqs:       reqs,
+			ExpectCode: pb.ResponseCode_NON_EXIST,
+		},
 	}
 
+	for _, test := range tests {
+		for _, req := range test.Reqs {
+			req.Devid = test.DeviceID
+
+			resp, err := cli.UpdateStatus(ctx, req)
+
+			assert.Nil(t, err)
+			assert.Equal(t, test.ExpectCode, resp.ResultCode)
+
+			if test.ExpectCode == pb.ResponseCode_SUCCESS {
+				assert.Nil(t, err)
+				assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
+				assert.Equal(t, req.Devid, resp.Devices[0].Devid)
+				assert.Equal(t, req.GetBatteryValue(), resp.Devices[0].Battery)
+				assert.Equal(t, req.GetTemperatureValue(), resp.Devices[0].Temperature)
+				assert.Equal(t, req.GetRssiValue(), resp.Devices[0].Rssi)
+				assert.Equal(t, req.GetAccXMgValue(), resp.Devices[0].AccXMg)
+				assert.Equal(t, req.GetAccYMgValue(), resp.Devices[0].AccYMg)
+				assert.Equal(t, req.GetAccZMgValue(), resp.Devices[0].AccZMg)
+				assert.Equal(t, req.GetIsDeviceOkValue(), resp.Devices[0].IsDeviceOk)
+				assert.Equal(t, req.GetIsAlarmedValue(), resp.Devices[0].IsAlarmed)
+
+				alarmDate := req.GetAlarmDateValue()
+				if alarmDate.Seconds == 0 && alarmDate.Nanos == 0 {
+					assert.Nil(t, resp.Devices[0].AlarmDate)
+				} else {
+					assert.Equal(t, alarmDate.Seconds, resp.Devices[0].AlarmDate.Seconds)
+				}
+			}
+		}
+	}
 }
 
 func TestUpdateDeviceConfig(t *testing.T) {
-	testDevid := "ino-vibe-test"
 	ctx := context.Background()
 	cli, _ := NewClient()
 
 	reqs := []*pb.DeviceConfigUpdateRequest{
 		{
-			Devid:             testDevid,
 			SensorRange:       &pb.DeviceConfigUpdateRequest_SensorRangeValue{SensorRangeValue: pb.SensorRangeType_Gravity2},
 			IntThreshold:      &pb.DeviceConfigUpdateRequest_IntThresholdValue{IntThresholdValue: 1080.0},
 			DecisionThreshold: &pb.DeviceConfigUpdateRequest_DecisionThresholdValue{DecisionThresholdValue: 1100.0},
@@ -256,7 +313,6 @@ func TestUpdateDeviceConfig(t *testing.T) {
 				MuteDateValue: &timestamp.Timestamp{Seconds: time.Now().Unix()}},
 		},
 		{
-			Devid:             testDevid,
 			SensorRange:       &pb.DeviceConfigUpdateRequest_SensorRangeValue{SensorRangeValue: pb.SensorRangeType_Gravity16},
 			IntThreshold:      &pb.DeviceConfigUpdateRequest_IntThresholdValue{IntThresholdValue: 1900.0},
 			DecisionThreshold: &pb.DeviceConfigUpdateRequest_DecisionThresholdValue{DecisionThresholdValue: 1800.0},
@@ -270,29 +326,62 @@ func TestUpdateDeviceConfig(t *testing.T) {
 		},
 	}
 
-	for _, req := range reqs {
-		resp, err := cli.UpdateConfig(ctx, req)
+	tests := []struct {
+		Desc       string
+		DeviceID   string
+		Reqs       []*pb.DeviceConfigUpdateRequest
+		ExpectCode pb.ResponseCode
+	}{
+		{
+			Desc:       "Success",
+			DeviceID:   "ino-vibe-test",
+			Reqs:       reqs,
+			ExpectCode: pb.ResponseCode_SUCCESS,
+		},
+		{
+			Desc:       "Empty ID",
+			DeviceID:   "",
+			Reqs:       reqs,
+			ExpectCode: pb.ResponseCode_NON_EXIST,
+		},
+		{
+			Desc:       "Not exist",
+			DeviceID:   "not-exist-id",
+			Reqs:       reqs,
+			ExpectCode: pb.ResponseCode_NON_EXIST,
+		},
+	}
 
-		assert.Nil(t, err)
-		assert.Equal(t, pb.ResponseCode_SUCCESS, resp.ResultCode)
-		assert.Equal(t, testDevid, resp.Devices[0].Devid)
-		assert.Equal(t, req.GetSensorRangeValue(), resp.Devices[0].SensorRange)
-		assert.Equal(t, req.GetIntThresholdValue(), resp.Devices[0].IntThresholdMg)
+	for _, test := range tests {
+		for _, req := range test.Reqs {
+			req.Devid = test.DeviceID
 
-		assert.Equal(t, req.GetSampleRateValue(), resp.Devices[0].SampleRate)
-		assert.Equal(t, req.GetWaveBlocksValue(), resp.Devices[0].WaveBlocks)
-		assert.Equal(t, req.GetIsNotifEnabledValue(), resp.Devices[0].IsNotifEnabled)
-		assert.Equal(t, req.GetRecogParam_0Value(), resp.Devices[0].RecogParam_0)
-		assert.Equal(t, req.GetRecogParam_1Value(), resp.Devices[0].RecogParam_1)
-		assert.Equal(t, req.GetRecogParam_2Value(), resp.Devices[0].RecogParam_2)
+			resp, err := cli.UpdateConfig(ctx, req)
 
-		devResp, _ := cli.Detail(ctx, testDevid)
-		dev := devResp.Devices[0]
+			assert.Nil(t, err)
+			assert.Equal(t, test.ExpectCode, resp.ResultCode)
 
-		if req.GetMuteDateValue() != nil {
-			assert.Equal(t, req.GetMuteDateValue().Seconds, dev.MuteDate.Seconds)
-		} else {
-			assert.Nil(t, dev.GetMuteDate())
+			if test.ExpectCode == pb.ResponseCode_SUCCESS {
+				assert.Equal(t, test.DeviceID, resp.Devices[0].Devid)
+				assert.Equal(t, req.GetSensorRangeValue(), resp.Devices[0].SensorRange)
+				assert.Equal(t, req.GetIntThresholdValue(), resp.Devices[0].IntThresholdMg)
+
+				assert.Equal(t, req.GetSampleRateValue(), resp.Devices[0].SampleRate)
+				assert.Equal(t, req.GetWaveBlocksValue(), resp.Devices[0].WaveBlocks)
+				assert.Equal(t, req.GetIsNotifEnabledValue(), resp.Devices[0].IsNotifEnabled)
+				assert.Equal(t, req.GetRecogParam_0Value(), resp.Devices[0].RecogParam_0)
+				assert.Equal(t, req.GetRecogParam_1Value(), resp.Devices[0].RecogParam_1)
+				assert.Equal(t, req.GetRecogParam_2Value(), resp.Devices[0].RecogParam_2)
+
+				devResp, _ := cli.Detail(ctx, test.DeviceID)
+				dev := devResp.Devices[0]
+
+				if req.GetMuteDateValue() != nil {
+					assert.Equal(t, req.GetMuteDateValue().Seconds, dev.MuteDate.Seconds)
+				} else {
+					assert.Nil(t, dev.GetMuteDate())
+				}
+			}
 		}
 	}
 }
@@ -953,5 +1042,4 @@ func TestAngle(t *testing.T) {
 		angleZ := angle(test.X, test.Y, test.Z, 1)
 		fmt.Println("Angle", i, angleZ)
 	}
-
 }
